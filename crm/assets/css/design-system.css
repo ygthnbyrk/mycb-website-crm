@@ -297,9 +297,9 @@ table tbody tr:last-child td { border-bottom: none; }
     font-size: 12px;
     font-weight: 600;
 }
-.badge-green { background: var(--success-soft); color: var(--success); }
-.badge-orange { background: var(--warning-soft); color: var(--warning); }
-.badge-red { background: var(--danger-soft); color: var(--danger); }
+.badge-green, .badge-success { background: var(--success-soft); color: var(--success); }
+.badge-orange, .badge-warning { background: var(--warning-soft); color: var(--warning); }
+.badge-red, .badge-danger { background: var(--danger-soft); color: var(--danger); }
 .badge-blue { background: var(--accent-soft); color: var(--accent); }
 .badge-gray { background: var(--bg-hover); color: var(--text-secondary); }
 

@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'pagination.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -64,317 +65,17 @@ $stmt->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Ürünler - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-        }
-        .logo-sidebar {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .logo-sidebar span { color: #667eea; }
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .nav-item:hover { background: #f0f0f0; }
-        .nav-item.active { background: #667eea; color: white; }
-        .nav-icon { font-size: 20px; }
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .top-bar h1 { font-size: 28px; color: #333; }
-        .logout-btn {
-            padding: 10px 20px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .stat-box h3 {
-            font-size: 32px;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        .stat-box p { color: #666; font-size: 14px; }
-        .action-bar {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-            max-width: 400px;
-        }
-        .search-input {
-            flex: 1;
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .search-input:focus { outline: none; border-color: #667eea; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .btn-warning:hover { background: #e0a800; }
-        .btn-danger { background: #dc3545; color: white; font-size: 12px; padding: 6px 12px; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-edit { background: #17a2b8; color: white; font-size: 12px; padding: 6px 12px; }
-        .btn-edit:hover { background: #138496; }
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #555;
-        }
-        tr:hover { background: #f8f9fa; }
-        .no-data { text-align: center; padding: 40px; color: #999; }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .page-btn {
-            padding: 8px 12px;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            color: #333;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        .page-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: #f8f9fa;
-        }
-        .page-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            font-weight: bold;
-        }
-        .page-dots {
-            padding: 8px 4px;
-            color: #999;
-            font-weight: bold;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .modal-header h2 { font-size: 24px; color: #333; }
-        .close-btn { font-size: 28px; cursor: pointer; color: #999; }
-        .close-btn:hover { color: #333; }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .form-group input:read-only {
-            background: #f5f5f5;
-            cursor: not-allowed;
-        }
-        .required { color: red; }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-    </style>
 </head>
 <body>
-   <!-- Hamburger Menu -->
-<button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <img src="assets/images/logo-light.png" alt="Logo" style="max-width: 200px; height: auto;">
-        <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item">
-                <span class="nav-icon">🏠</span>
-                <span>Ana Sayfa</span>
-            </a>
-            <a href="customers.php" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span>Müşteriler</span>
-            </a>
-            <a href="products.php" class="nav-item active">
-                <span class="nav-icon">📦</span>
-                <span>Ürünler</span>
-            </a>
-            <a href="simcards.php" class="nav-item">
-                <span class="nav-icon">📱</span>
-                <span>Sim Kartlar</span>
-            </a>
-            <a href="create-sale.php" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span>Satış</span>
-            </a>
-            <a href="sales-list.php" class="nav-item">
-                <span class="nav-icon">📋</span>
-                <span>Satış Listesi</span>
-            </a>
-            <a href="subscriptions.php" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span>Abonelikler</span>
-            </a>
-            <a href="logout.php" class="nav-item" style="margin-top: auto;">
-                <span class="nav-icon">🚪</span>
-                <span>Çıkış Yap</span>
-            </a>
-        </nav>
-    </div>
+    <?php $active_page = 'products'; include 'partials/sidebar.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
         <div class="top-bar">
-            <h1>Ürün Yönetimi</h1>
-            <a href="logout.php" class="logout-btn">Çıkış Yap</a>
+            <h1><?php echo icon('package'); ?> Ürün Yönetimi</h1>
         </div>
 
         <?php if(isset($_SESSION['success'])): ?>
@@ -414,17 +115,17 @@ $stmt->close();
             <div class="search-box">
                 <form method="GET" style="display: flex; gap: 10px; width: 100%;">
                     <input type="text" name="search" class="search-input" placeholder="Ürün adı veya IMEI ara..." value="<?php echo htmlspecialchars($search); ?>">
-                    <button type="submit" class="btn btn-primary">🔍 Ara</button>
+                    <button type="submit" class="btn btn-primary"><?php echo icon('search'); ?> Ara</button>
                     <?php if($search): ?>
-                        <a href="products.php" class="btn btn-warning">✖ Temizle</a>
+                        <a href="products.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                     <?php endif; ?>
                 </form>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="openModal()" class="btn btn-success">➕ Ürün Ekle</button>
-                <a href="export-products.php" class="btn btn-primary">📥 Excel İndir</a>
-                <a href="sample-products-template.php" class="btn btn-warning">📋 Şablon İndir</a>
-                <button onclick="document.getElementById('importFile').click()" class="btn btn-primary">📤 Excel Yükle</button>
+                <button onclick="openModal()" class="btn btn-primary"><?php echo icon('plus'); ?> Ürün Ekle</button>
+                <a href="export-products.php" class="btn btn-secondary">Excel İndir</a>
+                <a href="sample-products-template.php" class="btn btn-secondary">Şablon İndir</a>
+                <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary"><?php echo icon('upload'); ?> Excel Yükle</button>
                 <form id="importForm" method="POST" action="import-products.php" enctype="multipart/form-data" style="display: none;">
                     <input type="file" id="importFile" name="excel_file" accept=".xlsx,.xls" onchange="this.form.submit()">
                 </form>
