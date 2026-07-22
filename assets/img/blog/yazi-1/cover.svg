@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#0F0F0F"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C13535" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#C13535" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid1" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#C13535" stroke-width="0.5" opacity="0.08"/>
+    </pattern>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bg1)"/>
+  <rect width="1200" height="630" fill="url(#grid1)"/>
+  <ellipse cx="600" cy="315" rx="420" ry="280" fill="url(#glow1)"/>
+  
+  <!-- Outer signal rings -->
+  <circle cx="600" cy="290" r="220" fill="none" stroke="#C13535" stroke-width="1" opacity="0.15"/>
+  <circle cx="600" cy="290" r="170" fill="none" stroke="#C13535" stroke-width="1" opacity="0.25"/>
+  <circle cx="600" cy="290" r="120" fill="none" stroke="#C13535" stroke-width="1.5" opacity="0.4"/>
+  
+  <!-- Vehicle dots scattered -->
+  <g fill="#C13535" opacity="0.5">
+    <circle cx="380" cy="200" r="4"/>
+    <circle cx="820" cy="220" r="4"/>
+    <circle cx="350" cy="380" r="4"/>
+    <circle cx="850" cy="370" r="4"/>
+    <circle cx="450" cy="450" r="4"/>
+    <circle cx="750" cy="450" r="4"/>
+  </g>
+  
+  <!-- Connection lines from pin to vehicles -->
+  <g stroke="#C13535" stroke-width="0.8" opacity="0.18" stroke-dasharray="3 4" fill="none">
+    <line x1="600" y1="290" x2="380" y2="200"/>
+    <line x1="600" y1="290" x2="820" y2="220"/>
+    <line x1="600" y1="290" x2="350" y2="380"/>
+    <line x1="600" y1="290" x2="850" y2="370"/>
+    <line x1="600" y1="290" x2="450" y2="450"/>
+    <line x1="600" y1="290" x2="750" y2="450"/>
+  </g>
+  
+  <!-- GPS Pin (centered) -->
+  <g transform="translate(540, 200)">
+    <path d="M60 0 C26.9 0 0 26.9 0 60 C0 105 60 180 60 180 C60 180 120 105 120 60 C120 26.9 93.1 0 60 0 Z" 
+          fill="none" stroke="#FFFFFF" stroke-width="3.5"/>
+    <circle cx="60" cy="60" r="22" fill="#C13535"/>
+    <circle cx="60" cy="60" r="22" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>
+  </g>
+  
+  <!-- Topic label -->
+  <g transform="translate(60, 540)">
+    <rect width="140" height="32" fill="none" stroke="#C13535" stroke-width="1" opacity="0.5"/>
+    <text x="70" y="22" font-family="Arial, sans-serif" font-size="11" font-weight="700" 
+          letter-spacing="3" fill="#C13535" text-anchor="middle">ARAÇ TAKİP</text>
+  </g>
+  
+  <!-- Number badge bottom-right -->
+  <text x="1140" y="600" font-family="Arial, sans-serif" font-size="120" font-weight="900" 
+        fill="#FFFFFF" opacity="0.04" text-anchor="end">01</text>
+</svg>

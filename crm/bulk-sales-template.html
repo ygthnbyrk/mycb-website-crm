@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <title>Toplu Satış Şablonu İndir</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0; }
+        .info-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .info-box h3 { color: #1976d2; margin-bottom: 10px; }
+        .info-box ul { margin-left: 20px; }
+        .info-box li { margin: 8px 0; color: #555; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        td {
+            background: #f8f9fa;
+            font-family: monospace;
+            color: #666;
+        }
+        .example {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover { background: #218838; }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover { background: #5568d3; }
+        .warning {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Toplu Satış Yükleme</h1>
+        <p class="subtitle">Excel şablonunu indirin, doldurun ve sisteme yükleyin</p>
+
+        <div class="info-box">
+            <h3>📋 Nasıl Kullanılır?</h3>
+            <ul>
+                <li><strong>1. Adım:</strong> Aşağıdaki butona tıklayarak <strong>Excel şablonunu</strong> indirin</li>
+                <li><strong>2. Adım:</strong> Excel ile açın ve satışları doldurun</li>
+                <li><strong>3. Adım:</strong> Dosyayı <strong>Excel formatında (.xls veya .xlsx)</strong> kaydedin</li>
+                <li><strong>4. Adım:</strong> "Toplu Satış Yükle" sayfasından <strong>Excel dosyanızı</strong> yükleyin</li>
+            </ul>
+            <p style="color: #28a745; font-weight: 600; margin-top: 15px; padding: 10px; background: #d4edda; border-radius: 5px;">
+                ✅ ÖNEMLİ: CSV'ye çevirmenize gerek yok! Excel formatında (.xls veya .xlsx) kaydedin.
+            </p>
+        </div>
+
+        <div class="info-box" style="background: #fff3cd; border-left-color: #ffc107;">
+            <h3 style="color: #856404;">📞 Telefon Numarası Formatı</h3>
+            <p style="color: #856404; margin-bottom: 10px;">Sistemde telefon numaraları farklı formatlarda kayıtlı olabilir. Endişelenmeyin, tüm formatlar çalışır!</p>
+            <ul style="color: #856404;">
+                <li><strong>5551234567</strong> ✅ Çalışır</li>
+                <li><strong>0555 123 45 67</strong> ✅ Çalışır</li>
+                <li><strong>0555-123-45-67</strong> ✅ Çalışır</li>
+                <li><strong>(0555) 123 45 67</strong> ✅ Çalışır</li>
+            </ul>
+            <p style="color: #856404; margin-top: 10px; font-weight: 600;">Sistem otomatik olarak sadece rakamları alıp karşılaştırır!</p>
+        </div>
+
+        <h3 style="margin: 30px 0 15px 0; color: #667eea;">📑 Şablon Kolonları</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Kolon Adı</th>
+                    <th>Zorunlu?</th>
+                    <th>Açıklama</th>
+                    <th>Örnek</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>musteri_adi</strong></td>
+                    <td>✅ Evet</td>
+                    <td>Müşteri adı (sistemde kayıtlı olmalı)</td>
+                    <td>Ahmet Yılmaz</td>
+                </tr>
+                <tr>
+                    <td><strong>imei</strong></td>
+                    <td>❌ Hayır</td>
+                    <td>Ürün IMEI (stokta olmalı)</td>
+                    <td>123456789012345</td>
+                </tr>
+                <tr>
+                    <td><strong>sim_telefon</strong></td>
+                    <td>❌ Hayır</td>
+                    <td>SIM kart telefon no (stokta olmalı)<br><small style="color: #666;">Format: 5551234567 veya 0555 123 45 67</small></td>
+                    <td>5551234567</td>
+                </tr>
+                <tr>
+                    <td><strong>plaka</strong></td>
+                    <td>❌ Hayır</td>
+                    <td>Araç plakası</td>
+                    <td>34ABC123</td>
+                </tr>
+                <tr>
+                    <td><strong>satis_tarihi</strong></td>
+                    <td>✅ Evet</td>
+                    <td>GG.AA.YYYY formatında</td>
+                    <td>20.10.2024</td>
+                </tr>
+                <tr>
+                    <td><strong>urun_fiyati</strong></td>
+                    <td>❌ Hayır</td>
+                    <td>Ürün satış fiyatı (nokta ile)</td>
+                    <td>1500.00</td>
+                </tr>
+                <tr>
+                    <td><strong>sim_fiyati</strong></td>
+                    <td>❌ Hayır</td>
+                    <td>SIM satış fiyatı (nokta ile)</td>
+                    <td>500.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="example">
+            <h3 style="color: #856404; margin-bottom: 10px;">💡 Örnek Satırlar</h3>
+            <code style="display: block; background: white; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <strong>Sadece Ürün:</strong><br>
+                Ahmet Yılmaz | 123456789012345 | (boş) | 34ABC123 | 20.10.2024 | 1500.00 | (boş)
+            </code>
+            <code style="display: block; background: white; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <strong>Sadece SIM:</strong><br>
+                Mehmet Demir | (boş) | 5559876543 | 06XYZ789 | 21.10.2024 | (boş) | 500.00
+            </code>
+            <code style="display: block; background: white; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <strong>Sadece SIM (farklı format):</strong><br>
+                Ali Yılmaz | (boş) | 0555 987 65 43 | 35DEF456 | 21.10.2024 | (boş) | 500.00
+            </code>
+            <code style="display: block; background: white; padding: 10px; border-radius: 5px;">
+                <strong>Ürün + SIM:</strong><br>
+                Ayşe Kaya | 987654321098765 | 5551112233 | 16DEF456 | 22.10.2024 | 1500.00 | 500.00
+            </code>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ ÖNEMLİ NOTLAR:</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>En az <strong>IMEI</strong> veya <strong>SIM Telefon</strong> dolu olmalı</li>
+                <li><strong>İlk satır başlıklar!</strong> Başlık satırını silmeyin, değiştirmeyin</li>
+                <li><strong>Örnek satırları silebilirsiniz</strong> veya üzerine yazabilirsiniz</li>
+                <li><strong>Telefon Formatı:</strong> 5551234567, 0555 123 45 67, 0555-123-45-67 gibi tüm formatlar çalışır (boşluk, tire, parantez otomatik temizlenir)</li>
+                <li><strong>Fiyatlar:</strong> Sadece ürün satıyorsanız urun_fiyati, sadece SIM satıyorsanız sim_fiyati doldurun. İkisini birden satıyorsanız her ikisini de doldurun</li>
+                <li>Müşteri adı sistemde kayıtlı olmalı (Müşteriler sayfasından kontrol edin)</li>
+                <li>IMEI ve SIM telefon <strong>stokta</strong> ve <strong>müsait</strong> olmalı</li>
+                <li>Tarih formatı: <strong>GG.AA.YYYY</strong> (örn: 20.10.2024)</li>
+                <li style="color: #28a745; font-weight: 600;">✅ Dosyayı Excel formatında (.xls veya .xlsx) kaydedin - CSV'ye çevirmeyin!</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <button onclick="downloadTemplate()" class="btn btn-success">
+                📥 Excel Şablonu İndir (.xls)
+            </button>
+            <a href="bulk-sales-upload.php" class="btn btn-primary">
+                📤 Toplu Satış Yükle
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function downloadTemplate() {
+            // Excel şablonu için HTML içeriği
+            const htmlContent = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="UTF-8">
+                    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Satışlar</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+                    <style>
+                        table { border-collapse: collapse; width: 100%; }
+                        th { background-color: #667eea; color: white; font-weight: bold; padding: 10px; border: 1px solid #ddd; }
+                        td { padding: 8px; border: 1px solid #ddd; }
+                        .example { background-color: #f0f0f0; }
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>musteri_adi</th>
+                                <th>imei</th>
+                                <th>sim_telefon</th>
+                                <th>plaka</th>
+                                <th>satis_tarihi</th>
+                                <th>urun_fiyati</th>
+                                <th>sim_fiyati</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="example">
+                                <td>Ahmet Yılmaz</td>
+                                <td>123456789012345</td>
+                                <td></td>
+                                <td>34ABC123</td>
+                                <td>20.10.2024</td>
+                                <td>1500.00</td>
+                                <td></td>
+                            </tr>
+                            <tr class="example">
+                                <td>Mehmet Demir</td>
+                                <td></td>
+                                <td>5559876543</td>
+                                <td>06XYZ789</td>
+                                <td>21.10.2024</td>
+                                <td></td>
+                                <td>500.00</td>
+                            </tr>
+                            <tr class="example">
+                                <td>Ali Yılmaz</td>
+                                <td></td>
+                                <td>0555 987 65 43</td>
+                                <td>35DEF456</td>
+                                <td>21.10.2024</td>
+                                <td></td>
+                                <td>500.00</td>
+                            </tr>
+                            <tr class="example">
+                                <td>Ayşe Kaya</td>
+                                <td>987654321098765</td>
+                                <td>5551112233</td>
+                                <td>16DEF456</td>
+                                <td>22.10.2024</td>
+                                <td>1500.00</td>
+                                <td>500.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+            
+            // Blob oluştur
+            const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+            
+            // İndirme linki oluştur
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'toplu_satis_sablonu.xls');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('✅ Excel şablonu indirildi!\n\n📋 Nasıl kullanılır:\n\n1️⃣ Excel ile açın\n2️⃣ İlk 4 örnek satırı silebilir veya üzerine yazabilirsiniz\n3️⃣ Satışlarınızı doldurun:\n   • Telefon: 5551234567, 0555 123 45 67 gibi her format çalışır\n   • Sadece ürün: urun_fiyati doldurun\n   • Sadece SIM: sim_fiyati doldurun\n   • İkisi birden: her ikisini de doldurun\n4️⃣ Dosyayı Excel formatında kaydedin (.xls veya .xlsx)\n\n✅ ÖNEMLİ: CSV\'ye çevirmenize gerek yok!\n\n5️⃣ "Toplu Satış Yükle" sayfasından dosyanızı yükleyin');
+        }
+    </script>
+</body>
+</html>

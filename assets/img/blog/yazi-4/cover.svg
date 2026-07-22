@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#0F0F0F"/>
+    </linearGradient>
+    <radialGradient id="glow4" cx="60%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C13535" stop-opacity="0.2"/>
+      <stop offset="70%" stop-color="#C13535" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid4" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#C13535" stroke-width="0.5" opacity="0.08"/>
+    </pattern>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bg4)"/>
+  <rect width="1200" height="630" fill="url(#grid4)"/>
+  <ellipse cx="700" cy="315" rx="420" ry="260" fill="url(#glow4)"/>
+  
+  <!-- Truck silhouette (background, faded) -->
+  <g fill="#FFFFFF" opacity="0.05">
+    <rect x="780" y="370" width="280" height="100" rx="4"/>
+    <rect x="690" y="395" width="100" height="75" rx="4"/>
+    <polygon points="690,395 710,360 770,360 790,395"/>
+    <circle cx="730" cy="478" r="14" fill="#FFFFFF" opacity="0.12"/>
+    <circle cx="850" cy="478" r="14" fill="#FFFFFF" opacity="0.12"/>
+    <circle cx="980" cy="478" r="14" fill="#FFFFFF" opacity="0.12"/>
+  </g>
+  
+  <!-- Bar chart growing -->
+  <g transform="translate(140, 360)">
+    <rect x="0" y="100" width="40" height="50" fill="#C13535" opacity="0.4"/>
+    <rect x="50" y="80" width="40" height="70" fill="#C13535" opacity="0.55"/>
+    <rect x="100" y="55" width="40" height="95" fill="#C13535" opacity="0.7"/>
+    <rect x="150" y="30" width="40" height="120" fill="#C13535" opacity="0.85"/>
+    <rect x="200" y="0" width="40" height="150" fill="#C13535"/>
+  </g>
+  
+  <!-- Line graph (going up) -->
+  <g transform="translate(140, 200)">
+    <polyline points="0,90 60,70 120,80 180,40 240,50 300,20 360,30" 
+              fill="none" stroke="#C13535" stroke-width="2.5" opacity="0.85"/>
+    <!-- Data points -->
+    <circle cx="0" cy="90" r="4" fill="#C13535"/>
+    <circle cx="60" cy="70" r="4" fill="#C13535"/>
+    <circle cx="120" cy="80" r="4" fill="#C13535"/>
+    <circle cx="180" cy="40" r="4" fill="#C13535"/>
+    <circle cx="240" cy="50" r="4" fill="#C13535"/>
+    <circle cx="300" cy="20" r="4" fill="#C13535"/>
+    <circle cx="360" cy="30" r="6" fill="#FFFFFF" stroke="#C13535" stroke-width="2"/>
+    <!-- Trending line baseline -->
+    <line x1="0" y1="120" x2="360" y2="120" stroke="#FFFFFF" stroke-width="0.5" opacity="0.15"/>
+  </g>
+  
+  <!-- Stat cards in upper right -->
+  <g transform="translate(620, 130)">
+    <rect width="180" height="78" fill="#1A1A1A" stroke="rgba(255,255,255,0.08)" stroke-width="1" opacity="0.95"/>
+    <text x="20" y="32" font-family="Arial, sans-serif" font-size="32" font-weight="900" fill="#C13535">+47%</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" font-weight="700" 
+          letter-spacing="2" fill="#FFFFFF" opacity="0.5">PAZAR BÜYÜMESİ</text>
+  </g>
+  <g transform="translate(820, 130)">
+    <rect width="180" height="78" fill="#C13535" opacity="0.95"/>
+    <text x="20" y="32" font-family="Arial, sans-serif" font-size="32" font-weight="900" fill="#FFFFFF">2.5M+</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" font-weight="700" 
+          letter-spacing="2" fill="#FFFFFF" opacity="0.85">AKTİF ARAÇ</text>
+  </g>
+  
+  <!-- Topic label -->
+  <g transform="translate(60, 540)">
+    <rect width="180" height="32" fill="none" stroke="#C13535" stroke-width="1" opacity="0.5"/>
+    <text x="90" y="22" font-family="Arial, sans-serif" font-size="11" font-weight="700" 
+          letter-spacing="3" fill="#C13535" text-anchor="middle">SEKTÖR HABERLERİ</text>
+  </g>
+  
+  <text x="1140" y="600" font-family="Arial, sans-serif" font-size="120" font-weight="900" 
+        fill="#FFFFFF" opacity="0.04" text-anchor="end">04</text>
+</svg>

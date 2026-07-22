@@ -1,0 +1,214 @@
+/* ============================================
+   MYCB CRM - RESPONSIVE CSS - FIXED
+   Tüm sayfalarda kullanılacak mobile optimize
+   ============================================ */
+
+/* Hamburger Menu Butonu */
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 9999;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@media screen and (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block !important;
+    }
+}
+
+/* Tablet ve altı (768px ve küçük) */
+@media screen and (max-width: 768px) {
+    
+    /* Sidebar mobilde gizle */
+    .sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 250px !important;
+        height: 100vh !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+        z-index: 10000 !important;
+        background: white !important;
+        overflow-y: auto !important;
+    }
+    
+    /* SIDEBAR AÇIK DURUM - BU EKSİKTİ! */
+    .sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    /* Main content tam genişlik */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 15px !important;
+        padding-top: 60px !important;
+    }
+    
+    /* Top bar */
+    .top-bar {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start !important;
+    }
+    
+    .top-bar h1 {
+        font-size: 22px !important;
+    }
+    
+    .logout-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    /* Filtreler */
+    .filters {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    .filters > div {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filters label {
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .filters select {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+    
+    .filters button,
+    .filters a {
+        width: 100%;
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    /* İstatistik kartları */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    
+    .stat-card {
+        padding: 20px !important;
+    }
+    
+    .stat-card .number {
+        font-size: 32px !important;
+    }
+    
+    /* Detay kartları */
+    .details-grid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
+    
+    .detail-card {
+        padding: 15px !important;
+    }
+    
+    .detail-card h3 {
+        font-size: 16px !important;
+    }
+    
+    /* Tablolar (eğer varsa) */
+    table {
+        font-size: 12px !important;
+    }
+    
+    table th,
+    table td {
+        padding: 8px 5px !important;
+    }
+    
+    /* Butonlar */
+    .btn,
+    button,
+    .action-btn {
+        padding: 10px 15px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Modal'lar */
+    .modal-content {
+        width: 95% !important;
+        margin: 20px auto !important;
+    }
+    
+    /* Form elemanları */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px !important; /* iOS zoom engellemek için */
+        width: 100%;
+    }
+    
+    /* Logo */
+    .sidebar img {
+        max-width: 150px !important;
+    }
+}
+
+/* Çok küçük ekranlar (480px ve küçük) */
+@media screen and (max-width: 480px) {
+    .main-content {
+        padding: 10px !important;
+    }
+    
+    .top-bar h1 {
+        font-size: 18px !important;
+    }
+    
+    .stat-card .number {
+        font-size: 28px !important;
+    }
+    
+    .detail-item {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start !important;
+    }
+    
+    table {
+        font-size: 11px !important;
+    }
+}
+
+/* Sidebar açıkken arka planı karart */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+@media screen and (max-width: 768px) {
+    .sidebar-overlay.active {
+        display: block;
+    }
+}

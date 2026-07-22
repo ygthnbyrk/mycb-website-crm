@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#0F0F0F"/>
+    </linearGradient>
+    <radialGradient id="glow2" cx="50%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#C13535" stop-opacity="0.2"/>
+      <stop offset="70%" stop-color="#C13535" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid2" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#C13535" stroke-width="0.5" opacity="0.08"/>
+    </pattern>
+    <radialGradient id="lens" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="60%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#2A2A2A"/>
+    </radialGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bg2)"/>
+  <rect width="1200" height="630" fill="url(#grid2)"/>
+  <ellipse cx="600" cy="350" rx="420" ry="280" fill="url(#glow2)"/>
+  
+  <!-- View frustum lines (perspective lines extending) -->
+  <g stroke="#C13535" stroke-width="1" opacity="0.2" fill="none">
+    <line x1="600" y1="315" x2="100" y2="80"/>
+    <line x1="600" y1="315" x2="1100" y2="80"/>
+    <line x1="600" y1="315" x2="100" y2="550"/>
+    <line x1="600" y1="315" x2="1100" y2="550"/>
+  </g>
+  
+  <!-- Field of view arc -->
+  <path d="M 200 180 A 500 500 0 0 1 1000 180" fill="none" stroke="#C13535" stroke-width="1" 
+        stroke-dasharray="4 6" opacity="0.25"/>
+  <path d="M 280 230 A 380 380 0 0 1 920 230" fill="none" stroke="#C13535" stroke-width="1" 
+        stroke-dasharray="4 6" opacity="0.35"/>
+  
+  <!-- Camera lens body -->
+  <g transform="translate(600, 315)">
+    <!-- Outer ring -->
+    <circle r="120" fill="#1A1A1A" stroke="#C13535" stroke-width="3"/>
+    <!-- Mid ring -->
+    <circle r="98" fill="none" stroke="#FFFFFF" stroke-width="1.2" opacity="0.4"/>
+    <!-- Lens glass -->
+    <circle r="80" fill="url(#lens)" stroke="#C13535" stroke-width="1" opacity="0.8"/>
+    <!-- Inner aperture -->
+    <circle r="50" fill="none" stroke="#FFFFFF" stroke-width="1" opacity="0.25"/>
+    <!-- Reflection highlight -->
+    <ellipse cx="-22" cy="-22" rx="18" ry="12" fill="#FFFFFF" opacity="0.12"/>
+    <!-- Center -->
+    <circle r="14" fill="#000000"/>
+    <circle r="6" fill="#C13535"/>
+  </g>
+  
+  <!-- Recording indicator -->
+  <g transform="translate(770, 220)">
+    <circle r="12" fill="#C13535"/>
+    <circle r="12" fill="none" stroke="#C13535" stroke-width="2" opacity="0.4">
+      <animate attributeName="r" values="12;22;12" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <text x="22" y="5" font-family="Arial, sans-serif" font-size="13" font-weight="700" 
+          fill="#FFFFFF" letter-spacing="2">REC</text>
+  </g>
+  
+  <!-- Topic label -->
+  <g transform="translate(60, 540)">
+    <rect width="120" height="32" fill="none" stroke="#C13535" stroke-width="1" opacity="0.5"/>
+    <text x="60" y="22" font-family="Arial, sans-serif" font-size="11" font-weight="700" 
+          letter-spacing="3" fill="#C13535" text-anchor="middle">KAMERA</text>
+  </g>
+  
+  <text x="1140" y="600" font-family="Arial, sans-serif" font-size="120" font-weight="900" 
+        fill="#FFFFFF" opacity="0.04" text-anchor="end">02</text>
+</svg>

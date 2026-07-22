@@ -1,0 +1,18 @@
+# Kapsam dışı / eski-ölü kod
+finans/
+includes/
+data/
+cgi-bin/
+/index.php
+
+# Log / debug dosyaları
+error_log
+**/error_log
+crm/debug.txt
+
+# Veritabanı dump'ı (hassas müşteri verisi içeriyor, repoya girmeyecek)
+*.sql
+
+# OS / editor
+.DS_Store
+Thumbs.db

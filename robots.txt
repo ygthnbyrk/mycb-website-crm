@@ -1,0 +1,9 @@
+# robots.txt for mycbteknoloji.com
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.mycbteknoloji.com/sitemap.xml
+
+# Crawl-delay isteğe bağlı - genellikle gerekmez
+# Crawl-delay: 1
