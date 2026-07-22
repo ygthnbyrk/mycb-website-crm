@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -119,242 +120,12 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Dashboard - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            overflow-y: auto;
-        }
-        .logo-sidebar {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 400px;
-            padding-bottom: 40px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .logo-sidebar span { color: #667eea; }
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .nav-item:hover { background: #f0f0f0; }
-        .nav-item.active { background: #667eea; color: white; }
-        .nav-icon { font-size: 20px; }
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .top-bar h1 { font-size: 28px; color: #333; }
-        .welcome { color: #666; font-size: 14px; margin-top: 5px; }
-        .logout-btn {
-            padding: 10px 20px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .filters {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .filters label {
-            font-weight: 600;
-            color: #555;
-            margin-right: 10px;
-        }
-        .filters select {
-            padding: 8px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            min-width: 200px;
-        }
-        .filters button {
-            padding: 8px 20px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .filters a {
-            padding: 8px 20px;
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-            cursor: pointer;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
-        .stat-card h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-        .stat-card .number {
-            font-size: 42px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .stat-card .icon {
-            font-size: 30px;
-            margin-bottom: 10px;
-        }
-        .stat-card.blue { border-left: 4px solid #667eea; }
-        .stat-card.blue .number { color: #667eea; }
-        .stat-card.green { border-left: 4px solid #28a745; }
-        .stat-card.green .number { color: #28a745; }
-        .stat-card.orange { border-left: 4px solid #fd7e14; }
-        .stat-card.orange .number { color: #fd7e14; }
-        .stat-card.purple { border-left: 4px solid #6f42c1; }
-        .stat-card.purple .number { color: #6f42c1; }
-        .stat-card.red { border-left: 4px solid #dc3545; }
-        .stat-card.red .number { color: #dc3545; }
-        .stat-card.cyan { border-left: 4px solid #17a2b8; }
-        .stat-card.cyan .number { color: #17a2b8; }
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-        }
-        .detail-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .detail-card h3 {
-            font-size: 18px;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            border-bottom: 1px solid #f5f5f5;
-        }
-        .detail-item:hover { background: #f8f9fa; }
-        .detail-item span:first-child {
-            font-weight: 600;
-            color: #555;
-        }
-        .detail-item span:last-child {
-            font-weight: bold;
-            color: #667eea;
-        }
-        .no-data {
-            text-align: center;
-            padding: 30px;
-            color: #999;
-        }
-    </style>
 </head>
 <body>
-    <!-- Hamburger Menu -->
-<button class="mobile-menu-btn" onclick="toggleMenu()" style="z-index: 9999 !important; pointer-events: auto !important;">☰</button>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-<img src="assets/images/logo-light.png" alt="Logo" style="max-width: 200px; height: auto;">
-
-
-<nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item active">
-                <span class="nav-icon">🏠</span>
-                <span>Ana Sayfa</span>
-            </a>
-            <a href="customers.php" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span>Müşteriler</span>
-            </a>
-            <a href="products.php" class="nav-item">
-                <span class="nav-icon">📦</span>
-                <span>Ürünler</span>
-            </a>
-            <a href="simcards.php" class="nav-item">
-                <span class="nav-icon">📱</span>
-                <span>Sim Kartlar</span>
-            </a>
-            <a href="create-sale.php" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span>Satış</span>
-            </a>
-            <a href="sales-list.php" class="nav-item">
-                <span class="nav-icon">📋</span>
-                <span>Satış Listesi</span>
-            </a>
-            <a href="bulk-sales-upload.php" class="nav-item">
-    <span class="nav-icon">📤</span>
-    <span>Toplu Satış Yükle</span>
-</a>
-            <a href="subscriptions.php" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span>Abonelikler</span>
-            </a>
-         
-           
-            <a href="logout.php" class="nav-item" style="margin-top: auto;">
-                <span class="nav-icon">🚪</span>
-                <span>Çıkış Yap</span>
-            </a>
-        </nav>
-    </div>
+    <?php $active_page = 'dashboard'; include 'partials/sidebar.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
@@ -363,13 +134,12 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
                 <h1>Dashboard</h1>
                 <p class="welcome">Hoş geldiniz, <?php echo htmlspecialchars($user_name); ?>!</p>
             </div>
-            <a href="logout.php" class="logout-btn">Çıkış Yap</a>
         </div>
 
         <!-- Filtreler -->
         <form method="GET" class="filters">
             <div>
-                <label>📦 Ürün Modeli:</label>
+                <label>Ürün Modeli</label>
                 <select name="product_model">
                     <option value="all" <?php echo $product_model_filter === 'all' ? 'selected' : ''; ?>>Tüm Modeller</option>
                     <?php foreach($models as $model): ?>
@@ -381,7 +151,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
             </div>
 
             <div>
-                <label>📱 Operatör:</label>
+                <label>Operatör</label>
                 <select name="simcard_operator">
                     <option value="all" <?php echo $simcard_operator_filter === 'all' ? 'selected' : ''; ?>>Tüm Operatörler</option>
                     <?php foreach($operators as $operator): ?>
@@ -393,7 +163,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
             </div>
 
             <div>
-                <label>🏢 Şirket:</label>
+                <label>Şirket</label>
                 <select name="simcard_company">
                     <option value="all" <?php echo $simcard_company_filter === 'all' ? 'selected' : ''; ?>>Tüm Şirketler</option>
                     <?php foreach($companies as $company): ?>
@@ -404,15 +174,15 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
                 </select>
             </div>
 
-            <button type="submit">🔍 Filtrele</button>
-            <a href="dashboard.php">✖ Temizle</a>
+            <button type="submit" class="btn btn-primary"><?php echo icon('search'); ?> Filtrele</button>
+            <a href="dashboard.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
         </form>
 
         <!-- İstatistik Kartları -->
         <div class="stats-grid">
             <!-- 1. Ürün Stok -->
             <div class="stat-card blue">
-                <div class="icon">📦</div>
+                <div class="icon"><?php echo icon('package'); ?></div>
                 <h3>Ürün Stok</h3>
                 <div class="number"><?php echo $product_stock; ?></div>
                 <small>Stoktaki cihaz sayısı</small>
@@ -420,7 +190,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- 2. Aktif Ürünler -->
             <div class="stat-card green">
-                <div class="icon">✅</div>
+                <div class="icon"><?php echo icon('check'); ?></div>
                 <h3>Aktif Ürünler</h3>
                 <div class="number"><?php echo $active_products; ?></div>
                 <small>Satılmış cihaz sayısı</small>
@@ -428,7 +198,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- 3. Stok Sim Kart -->
             <div class="stat-card orange">
-                <div class="icon">📱</div>
+                <div class="icon"><?php echo icon('sim'); ?></div>
                 <h3>Stok Sim Kart</h3>
                 <div class="number"><?php echo $simcard_stock; ?></div>
                 <small>Stoktaki sim kart sayısı</small>
@@ -436,7 +206,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- 4. Aktif Sim Kart -->
             <div class="stat-card purple">
-                <div class="icon">🟢</div>
+                <div class="icon"><?php echo icon('check'); ?></div>
                 <h3>Aktif Sim Kart</h3>
                 <div class="number"><?php echo $active_simcards; ?></div>
                 <small>Satılmış sim kart sayısı</small>
@@ -444,7 +214,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- 5. Yaklaşan Ürün Yenilemeleri -->
             <div class="stat-card red">
-                <div class="icon">⏰</div>
+                <div class="icon"><?php echo icon('clock'); ?></div>
                 <h3>Yaklaşan Ürün Yenileme</h3>
                 <div class="number"><?php echo $upcoming_products; ?></div>
                 <small>Son 30 gün içinde</small>
@@ -452,7 +222,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- 6. Yaklaşan Sim Kart Yenilemeleri -->
             <div class="stat-card cyan">
-                <div class="icon">🔔</div>
+                <div class="icon"><?php echo icon('bell'); ?></div>
                 <h3>Yaklaşan Sim Yenileme</h3>
                 <div class="number"><?php echo $upcoming_simcards; ?></div>
                 <small>Son 30 gün içinde</small>
@@ -463,7 +233,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
         <div class="details-grid">
             <!-- Ürün Stok Detay -->
             <div class="detail-card">
-                <h3>📦 Ürün Stok - Model Bazında</h3>
+                <h3><?php echo icon('package'); ?> Ürün Stok - Model Bazında</h3>
                 <?php if (!empty($product_stock_detail)): ?>
                     <?php foreach($product_stock_detail as $item): ?>
                         <div class="detail-item">
@@ -478,7 +248,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- Aktif Ürünler Detay -->
             <div class="detail-card">
-                <h3>✅ Aktif Ürünler - Model Bazında</h3>
+                <h3><?php echo icon('check'); ?> Aktif Ürünler - Model Bazında</h3>
                 <?php if (!empty($active_products_detail)): ?>
                     <?php foreach($active_products_detail as $item): ?>
                         <div class="detail-item">
@@ -493,7 +263,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- Sim Kart Stok Detay -->
             <div class="detail-card">
-                <h3>📱 Stok Sim Kart - Operatör/Şirket</h3>
+                <h3><?php echo icon('sim'); ?> Stok Sim Kart - Operatör/Şirket</h3>
                 <?php if (!empty($simcard_stock_detail)): ?>
                     <?php foreach($simcard_stock_detail as $item): ?>
                         <div class="detail-item">
@@ -508,7 +278,7 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
 
             <!-- Aktif Sim Kart Detay -->
             <div class="detail-card">
-                <h3>🟢 Aktif Sim Kart - Operatör/Şirket</h3>
+                <h3><?php echo icon('check'); ?> Aktif Sim Kart - Operatör/Şirket</h3>
                 <?php if (!empty($active_simcards_detail)): ?>
                     <?php foreach($active_simcards_detail as $item): ?>
                         <div class="detail-item">
@@ -522,12 +292,6 @@ $active_simcards_detail = $conn->query($active_simcards_detail_sql)->fetch_all(M
             </div>
         </div>
     </div>
-    
-  </div> !--< main-content sonu -->
-
-<!-- JavaScript -->
-
-</script>
-
 </body>
-</html>  
+</html>
+

@@ -212,3 +212,47 @@
         display: block;
     }
 }
+
+/* ============================================
+   Design-system bileşenleri için mobil kurallar
+   ============================================ */
+@media screen and (max-width: 768px) {
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .login-card {
+        padding: 28px 22px !important;
+    }
+
+    .card {
+        padding: 16px !important;
+    }
+
+    .stats-bar {
+        grid-template-columns: 1fr !important;
+    }
+
+    .filter-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .search-input {
+        min-width: auto !important;
+        width: 100%;
+    }
+
+    .table-scroll {
+        max-height: none !important;
+    }
+
+    .modal-content {
+        width: 92% !important;
+        padding: 18px !important;
+    }
+}
