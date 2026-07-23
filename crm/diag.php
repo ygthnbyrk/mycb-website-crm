@@ -38,3 +38,15 @@ while ($row = $res->fetch_assoc()) {
 echo "\n--- customers tablosunda BILINMIYOR ile baslayan kac musteri var ---\n";
 $r = $conn->query("SELECT COUNT(*) c FROM customers WHERE tax_number LIKE 'BILINMIYOR-%'")->fetch_assoc();
 echo "BILINMIYOR-... musteri sayisi: {$r['c']}\n";
+
+echo "\n--- bugun (created_at) olusan ama sale_date yili 2025 OLMAYAN satislar ---\n";
+$res = $conn->query("SELECT s.id, s.sale_date, s.customer_id, c.name, s.total FROM sales s LEFT JOIN customers c ON s.customer_id=c.id WHERE DATE(s.created_at)='2026-07-23' AND YEAR(s.sale_date) != 2025");
+while ($row = $res->fetch_assoc()) {
+    echo "id={$row['id']} sale_date={$row['sale_date']} customer={$row['name']} total={$row['total']}\n";
+}
+
+echo "\n--- customer_id=571, 2025-01-24 detaylari (neden 7 ayri satis) ---\n";
+$res = $conn->query("SELECT id, sale_date, total, created_at FROM sales WHERE customer_id=571 AND sale_date='2025-01-24'");
+while ($row = $res->fetch_assoc()) {
+    echo "sale_id={$row['id']} total={$row['total']} created_at={$row['created_at']}\n";
+}
