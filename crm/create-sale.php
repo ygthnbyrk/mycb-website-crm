@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -14,288 +15,23 @@ $user_name = $_SESSION['user_name'];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Yeni Satış - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            overflow-y: auto;
-        }
-        .logo-sidebar {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .logo-sidebar span { color: #667eea; }
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .nav-item:hover { background: #f0f0f0; }
-        .nav-item.active { background: #667eea; color: white; }
-        .nav-icon { font-size: 20px; }
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .top-bar h1 { font-size: 28px; color: #333; }
-        .logout-btn {
-            padding: 10px 20px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        .card-header {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #f0f0f0;
-            color: #333;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .form-group { 
-            margin-bottom: 20px;
-            position: relative;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .required { color: red; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-danger { background: #dc3545; color: white; font-size: 12px; padding: 6px 12px; }
-        .btn-danger:hover { background: #c82333; }
-        
-        /* Autocomplete Dropdown */
-        .autocomplete-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 2px solid #667eea;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        .autocomplete-dropdown.show {
-            display: block;
-        }
-        .autocomplete-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .autocomplete-item:hover {
-            background: #f8f9fa;
-        }
-        .autocomplete-item:last-child {
-            border-bottom: none;
-        }
-        .autocomplete-item strong {
-            display: block;
-            color: #333;
-        }
-        .autocomplete-item small {
-            color: #666;
-            font-size: 12px;
-        }
-        
-        .search-result {
-            border: 2px solid #28a745;
-            background: #d4edda;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-            display: none;
-        }
-        .search-result.show { display: block; }
-        .item-list {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        .item-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 50px;
-            gap: 15px;
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-            align-items: center;
-        }
-        .item-row:last-child { border-bottom: none; }
-        .summary-box {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            font-size: 16px;
-        }
-        .summary-row.total {
-            border-top: 2px solid #333;
-            font-weight: bold;
-            font-size: 20px;
-            color: #667eea;
-            margin-top: 10px;
-            padding-top: 15px;
-        }
-        .mapping-area {
-            background: #fff3cd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        .mapping-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-        .no-items {
-            text-align: center;
-            padding: 30px;
-            color: #999;
-            font-style: italic;
-        }
-        table { width: 100%; }
-        td { padding: 5px; }
-    </style>
 </head>
 <body>
-  <!-- Hamburger Menu -->
-<button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <img src="assets/images/logo-light.png" alt="Logo" style="max-width: 200px; height: auto;">
-        <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item">
-                <span class="nav-icon">🏠</span>
-                <span>Ana Sayfa</span>
-            </a>
-            <a href="customers.php" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span>Müşteriler</span>
-            </a>
-            <a href="products.php" class="nav-item">
-                <span class="nav-icon">📦</span>
-                <span>Ürünler</span>
-            </a>
-            <a href="simcards.php" class="nav-item">
-                <span class="nav-icon">📱</span>
-                <span>Sim Kartlar</span>
-            </a>
-            <a href="create-sale.php" class="nav-item active">
-                <span class="nav-icon">💰</span>
-                <span>Satış</span>
-            </a>
-            <a href="sales-list.php" class="nav-item">
-                <span class="nav-icon">📋</span>
-                <span>Satış Listesi</span>
-            </a>
-            <a href="subscriptions.php" class="nav-item">
-    <span class="nav-icon">🔄</span>
-    <span>Abonelikler</span>
-</a>
-            <a href="logout.php" class="nav-item" style="margin-top: auto;">
-                <span class="nav-icon">🚪</span>
-                <span>Çıkış Yap</span>
-            </a>
-        </nav>
-    </div>
+    <?php $active_page = 'create-sale'; include 'partials/sidebar.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
         <div class="top-bar">
-            <h1>Yeni Satış Oluştur</h1>
-            <a href="logout.php" class="logout-btn">Çıkış Yap</a>
+            <h1><?php echo icon('dollar'); ?> Yeni Satış Oluştur</h1>
         </div>
 
         <form id="saleForm" method="POST" action="save-sale.php">
             <!-- Genel Bilgiler -->
             <div class="card">
-                <div class="card-header">📅 Genel Bilgiler</div>
+                <div class="card-header"><?php echo icon('clock'); ?> Genel Bilgiler</div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -312,7 +48,7 @@ $user_name = $_SESSION['user_name'];
                 </div>
                 
                 <div id="customer_result" class="search-result">
-                    <strong>✓ Seçili Müşteri:</strong>
+                    <strong><?php echo icon('check'); ?> Seçili Müşteri:</strong>
                     <table>
                         <tr>
                             <td><strong>Ad:</strong></td>
@@ -332,7 +68,7 @@ $user_name = $_SESSION['user_name'];
 
             <!-- Cihazlar -->
             <div class="card">
-                <div class="card-header">📦 Cihazlar</div>
+                <div class="card-header"><?php echo icon('package'); ?> Cihazlar</div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -356,7 +92,7 @@ $user_name = $_SESSION['user_name'];
 
             <!-- Sim Kartlar -->
             <div class="card">
-                <div class="card-header">📱 Sim Kartlar</div>
+                <div class="card-header"><?php echo icon('sim'); ?> Sim Kartlar</div>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -380,7 +116,7 @@ $user_name = $_SESSION['user_name'];
 
             <!-- Eşleştirme -->
             <div class="card">
-                <div class="card-header">🔗 Ürün-Sim Kart Eşleştirme</div>
+                <div class="card-header"><?php echo icon('refresh'); ?> Ürün-Sim Kart Eşleştirme</div>
                 <div id="mapping_area" class="mapping-area">
                     <div class="no-items">Önce ürün ve sim kart ekleyin</div>
                 </div>
@@ -388,7 +124,7 @@ $user_name = $_SESSION['user_name'];
 
             <!-- Özet -->
             <div class="card">
-                <div class="card-header">💵 Fiyat Özeti</div>
+                <div class="card-header"><?php echo icon('dollar'); ?> Fiyat Özeti</div>
                 <div class="summary-box">
                     <div class="summary-row">
                         <span>Ara Toplam:</span>
@@ -411,8 +147,8 @@ $user_name = $_SESSION['user_name'];
                 <input type="hidden" id="simcards_data" name="simcards_data">
                 <input type="hidden" id="mappings_data" name="mappings_data">
 
-                <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 20px; font-size: 18px;">
-                    💾 Satışı Kaydet
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px; font-size: 16px;">
+                    <?php echo icon('check'); ?> Satışı Kaydet
                 </button>
             </div>
         </form>
@@ -423,6 +159,7 @@ $user_name = $_SESSION['user_name'];
         let simcards = [];
         let mappings = [];
         let searchTimeout;
+        const trashIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
 
         // Müşteri arama autocomplete
         const customerSearch = document.getElementById('customer_search');
@@ -591,13 +328,13 @@ $user_name = $_SESSION['user_name'];
                         <small>IMEI: ${escapeHtml(p.imei)}</small>
                     </div>
                     <div>
-                        <input type="text" placeholder="Plaka" value="${escapeHtml(p.plate)}" onchange="products[${i}].plate = this.value" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" placeholder="Plaka" value="${escapeHtml(p.plate)}" onchange="products[${i}].plate = this.value">
                     </div>
                     <div>
-                        <input type="number" step="0.01" value="${p.price}" onchange="products[${i}].price = parseFloat(this.value); updateSummary();" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" step="0.01" value="${p.price}" onchange="products[${i}].price = parseFloat(this.value); updateSummary();">
                     </div>
                     <div>
-                        <button type="button" onclick="removeProduct(${i})" class="btn btn-danger">🗑️</button>
+                        <button type="button" onclick="removeProduct(${i})" class="icon-btn btn-delete" title="Kaldır">${trashIconSvg}</button>
                     </div>
                 </div>
             `).join('');
@@ -632,10 +369,10 @@ $user_name = $_SESSION['user_name'];
                     </div>
                     <div>${escapeHtml(s.operator)}</div>
                     <div>
-                        <input type="number" step="0.01" value="${s.price}" onchange="simcards[${i}].price = parseFloat(this.value); updateSummary();" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="number" step="0.01" value="${s.price}" onchange="simcards[${i}].price = parseFloat(this.value); updateSummary();">
                     </div>
                     <div>
-                        <button type="button" onclick="removeSimcard(${i})" class="btn btn-danger">🗑️</button>
+                        <button type="button" onclick="removeSimcard(${i})" class="icon-btn btn-delete" title="Kaldır">${trashIconSvg}</button>
                     </div>
                 </div>
             `).join('');
@@ -679,7 +416,7 @@ $user_name = $_SESSION['user_name'];
                     </div>
                     <div>
                         <label><strong>Sim Kart:</strong></label>
-                        <select onchange="updateMapping(${pi}, this.value)" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <select onchange="updateMapping(${pi}, this.value)">
                             <option value="">Seçiniz</option>
                             ${simcards.map((s, si) => `<option value="${si}">${escapeHtml(s.phone)} (${escapeHtml(s.operator)})</option>`).join('')}
                         </select>
@@ -732,27 +469,5 @@ $user_name = $_SESSION['user_name'];
             this.submit();
         });
     </script>
-    
-    <script>
-function toggleMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-}
-
-document.addEventListener('click', function(event) {
-    if (window.innerWidth <= 768) {
-        const sidebar = document.querySelector('.sidebar');
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        
-        if (sidebar && menuBtn) {
-            if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
-                sidebar.classList.remove('active');
-            }
-        }
-    }
-});
-</script>
 </body>
 </html>

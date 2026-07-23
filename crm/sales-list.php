@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'pagination.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -169,363 +170,17 @@ $stmt->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Satış Listesi - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            overflow-y: auto;
-            z-index: 100;
-        }
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .nav-item:hover { background: #f0f0f0; }
-        .nav-item.active { background: #667eea; color: white; }
-        .nav-icon { font-size: 20px; }
-        .main-content {
-            margin-left: 250px;
-            padding: 15px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .top-bar h1 { 
-            font-size: 24px; 
-            color: #333;
-            text-align: left;
-        }
-        .logout-btn {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        .stat-box {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            border-left: 4px solid #667eea;
-            transition: all 0.3s;
-        }
-        .stat-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
-        .stat-box h3 {
-            font-size: 24px;
-            color: #667eea;
-            margin-bottom: 4px;
-        }
-        .stat-box p { 
-            color: #666; 
-            font-size: 12px; 
-        }
-        .filter-info {
-            font-size: 10px;
-            color: #28a745;
-            margin-top: 2px;
-            font-weight: 600;
-        }
-        .action-bar {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            margin-bottom: 15px;
-        }
-        .filter-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .search-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-        }
-        select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-            background: white;
-            cursor: pointer;
-        }
-        .btn {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        .btn-success:hover { background: #218838; }
-        .btn-warning {
-            background: #ffc107;
-            color: #333;
-        }
-        .btn-warning:hover { background: #e0a800; }
-        .table-wrapper {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-        table-scroll {
-    overflow-x: auto;
-    max-height: calc(100vh - 320px);  /* 380px'den 320px'e düşürdük */
-}
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        thead {
-            position: sticky;
-            top: 0;
-            background: #667eea;
-            z-index: 10;
-        }
-        th {
-            padding: 10px 8px;
-            color: white;
-            font-weight: 600;
-            text-align: left;
-            white-space: nowrap;
-        }
-        td {
-            padding: 8px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        tbody tr:hover { background: #f8f9fa; }
-        .no-data {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-        .item-list { display: flex; flex-direction: column; gap: 6px; }
-        .item-row {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .item-badge {
-            background: #667eea;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: 600;
-            display: inline-block;
-            width: fit-content;
-        }
-        .sim-badge {
-            background: #28a745;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 9px;
-            font-weight: 600;
-            display: inline-block;
-            width: fit-content;
-        }
-        .action-btns {
-            display: flex;
-            gap: 4px;
-            justify-content: center;
-        }
-        .icon-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-        .icon-btn:hover { background: #f0f0f0; transform: scale(1.1); }
-        .btn-edit:hover { background: #e3f2fd; }
-        .btn-delete:hover { background: #ffebee; }
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-        }
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .logo-icon {
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        .logo-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #333;
-        }
-        
-        .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
-.pagination a,
-.pagination span {
-    padding: 8px 14px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #333;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
-    background: white;
-    min-width: 40px;
-    text-align: center;
-}
-.pagination a:hover {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
-}
-.pagination span.current {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
-    font-weight: 600;
-}
-.pagination span.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #f5f5f5;
-}
-.pagination .dots {
-    border: none;
-    background: none;
-    padding: 8px 4px;
-}
-    </style>
 </head>
 <body>
-   <!-- Hamburger Menu -->
-<button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
-     <!-- Sidebar -->
-    <div class="sidebar">
-        <img src="assets/images/logo-light.png" alt="Logo" style="max-width: 200px; height: auto;">
-        <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item">
-                <span class="nav-icon">🏠</span>
-                <span>Ana Sayfa</span>
-            </a>
-            <a href="customers.php" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span>Müşteriler</span>
-            </a>
-            <a href="products.php" class="nav-item">
-                <span class="nav-icon">📦</span>
-                <span>Ürünler</span>
-            </a>
-            <a href="simcards.php" class="nav-item">
-                <span class="nav-icon">📱</span>
-                <span>Sim Kartlar</span>
-            </a>
-            <a href="create-sale.php" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span>Satış</span>
-            </a>
-            <a href="sales-list.php" class="nav-item active">
-                <span class="nav-icon">📋</span>
-                <span>Satış Listesi</span>
-            </a>
-            <a href="subscriptions.php" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span>Abonelikler</span>
-            </a>
-            <a href="logout.php" class="nav-item" style="margin-top: auto;">
-                <span class="nav-icon">🚪</span>
-                <span>Çıkış Yap</span>
-            </a>
-        </nav>
-    </div>
+    <?php $active_page = 'sales-list'; include 'partials/sidebar.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
         <div class="top-bar">
-            <h1>📋 Satış Listesi</h1>
-            <a href="logout.php" class="logout-btn">Çıkış Yap</a>
+            <h1><?php echo icon('list'); ?> Satış Listesi</h1>
         </div>
 
         <?php if(isset($_SESSION['success'])): ?>
@@ -547,7 +202,7 @@ $stmt->close();
                 <p>Toplam Satış</p>
                 <?php if($year || $month): ?>
                     <p class="filter-info">
-                        ✓ <?php 
+                        <?php echo icon('check'); ?> <?php
                             if($year && $month) {
                                 echo $months[$month] . ' ' . $year;
                             } elseif($year) {
@@ -564,7 +219,7 @@ $stmt->close();
                 <p>Toplam Ciro</p>
                 <?php if($year || $month): ?>
                     <p class="filter-info">
-                        ✓ <?php 
+                        <?php echo icon('check'); ?> <?php
                             if($year && $month) {
                                 echo $months[$month] . ' ' . $year;
                             } elseif($year) {
@@ -581,7 +236,7 @@ $stmt->close();
                 <p>Satılan Ürün</p>
                 <?php if($year || $month): ?>
                     <p class="filter-info">
-                        ✓ <?php 
+                        <?php echo icon('check'); ?> <?php
                             if($year && $month) {
                                 echo $months[$month] . ' ' . $year;
                             } elseif($year) {
@@ -598,7 +253,7 @@ $stmt->close();
                 <p>Satılan Sim Kart</p>
                 <?php if($year || $month): ?>
                     <p class="filter-info">
-                        ✓ <?php 
+                        <?php echo icon('check'); ?> <?php
                             if($year && $month) {
                                 echo $months[$month] . ' ' . $year;
                             } elseif($year) {
@@ -616,28 +271,28 @@ $stmt->close();
         <div class="action-bar">
             <form method="GET" class="filter-row" style="margin-bottom: 8px;">
                 <input type="text" name="search" class="search-input" 
-                       placeholder="🔍 Müşteri, IMEI veya plaka ara..." 
+                       placeholder="Müşteri, IMEI veya plaka ara..."
                        value="<?php echo htmlspecialchars($search); ?>">
                 <select name="year" onchange="this.form.submit()">
-                    <option value="">📅 Tüm Yıllar</option>
+                    <option value="">Tüm Yıllar</option>
                     <?php foreach($years as $y): ?>
                         <option value="<?php echo $y; ?>" <?php echo $year == $y ? 'selected' : ''; ?>><?php echo $y; ?></option>
                     <?php endforeach; ?>
                 </select>
                 <select name="month" onchange="this.form.submit()">
-                    <option value="">📆 Tüm Aylar</option>
+                    <option value="">Tüm Aylar</option>
                     <?php foreach($months as $m_num => $m_name): ?>
                         <option value="<?php echo $m_num; ?>" <?php echo $month == $m_num ? 'selected' : ''; ?>><?php echo $m_name; ?></option>
                     <?php endforeach; ?>
                 </select>
                 <button type="submit" class="btn btn-primary">Ara</button>
                 <?php if($search || $year || $month): ?>
-                    <a href="sales-list.php" class="btn btn-warning">✖ Temizle</a>
+                    <a href="sales-list.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                 <?php endif; ?>
             </form>
             <div class="filter-row">
-                <a href="create-sale.php" class="btn btn-success">➕ Yeni Satış</a>
-                <a href="export-sales.php?<?php echo http_build_query(['search' => $search, 'year' => $year, 'month' => $month]); ?>" class="btn btn-primary">📥 Excel İndir</a>
+                <a href="create-sale.php" class="btn btn-primary"><?php echo icon('plus'); ?> Yeni Satış</a>
+                <a href="export-sales.php?<?php echo http_build_query(['search' => $search, 'year' => $year, 'month' => $month]); ?>" class="btn btn-secondary">Excel İndir</a>
             </div>
         </div>
 
@@ -694,7 +349,7 @@ $stmt->close();
                                                     <small style="color: #666;">
                                                         IMEI: <?php echo htmlspecialchars($p['imei_number']); ?>
                                                         <?php if($p['plate']): ?>
-                                                            • 🚗 <?php echo htmlspecialchars($p['plate']); ?>
+                                                            • <?php echo htmlspecialchars($p['plate']); ?>
                                                         <?php endif; ?>
                                                     </small>
                                                 </div>
@@ -723,9 +378,9 @@ $stmt->close();
                                     <td>
                                         <div class="action-btns">
                                             <button onclick="window.location.href='edit-sale.php?id=<?php echo $sale['id']; ?>'" 
-                                                    class="icon-btn btn-edit" title="Düzenle">✏️</button>
-                                            <button onclick="if(confirm('Bu satışı silmek istediğinizden emin misiniz?')) window.location.href='delete-sale.php?id=<?php echo $sale['id']; ?>'" 
-                                                    class="icon-btn btn-delete" title="Sil">🗑️</button>
+                                                    class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                            <button onclick="if(confirm('Bu satışı silmek istediğinizden emin misiniz?')) window.location.href='delete-sale.php?id=<?php echo $sale['id']; ?>'"
+                                                    class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -751,26 +406,5 @@ $stmt->close();
         ]);
         ?>
     </div>
-    <script>
-function toggleMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-}
-
-document.addEventListener('click', function(event) {
-    if (window.innerWidth <= 768) {
-        const sidebar = document.querySelector('.sidebar');
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        
-        if (sidebar && menuBtn) {
-            if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
-                sidebar.classList.remove('active');
-            }
-        }
-    }
-});
-</script>
 </body>
 </html>

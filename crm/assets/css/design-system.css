@@ -328,6 +328,13 @@ table tbody tr:last-child td { border-bottom: none; }
     box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.form-group input:read-only,
+.form-group input[readonly] {
+    background: var(--bg-page);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
 .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 
 /* ---------- Alerts ---------- */
@@ -495,3 +502,246 @@ table tbody tr:last-child td { border-bottom: none; }
 .close-btn:hover { color: var(--text-primary); }
 
 .required { color: var(--danger); }
+
+/* Gelişmiş filtre satırı (etiketli seçim kutuları + aktif filtre etiketleri) */
+.filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 170px; }
+.filter-group label { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+.active-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+.filter-tag {
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.filter-tag .remove { cursor: pointer; opacity: 0.7; }
+.filter-tag .remove:hover { opacity: 1; }
+.action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.search-box { display: flex; gap: 10px; flex: 1; min-width: 260px; }
+.search-box .search-input { min-width: 0; }
+
+/* ============================================
+   Satış oluşturma / düzenleme sayfaları
+   ============================================ */
+.card-header {
+    font-size: 15.5px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.card-header svg { color: var(--accent); }
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 50;
+    display: none;
+    box-shadow: var(--shadow-md);
+}
+.autocomplete-dropdown.show { display: block; }
+.autocomplete-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--bg-hover); font-size: 13px; }
+.autocomplete-item:hover { background: var(--bg-hover); }
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item strong { display: block; color: var(--text-primary); font-size: 13.5px; }
+.autocomplete-item small { color: var(--text-secondary); font-size: 12px; }
+
+.search-result {
+    border: 1px solid var(--success);
+    background: var(--success-soft);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-top: 10px;
+    display: none;
+    font-size: 13px;
+}
+.search-result.show { display: block; }
+.search-result table { width: 100%; }
+.search-result td { padding: 4px 0; }
+
+.item-list { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 14px; overflow: hidden; }
+.item-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 50px;
+    gap: 14px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 13px;
+}
+.item-row:last-child { border-bottom: none; }
+.item-row input { padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 13px; width: 100%; }
+
+.summary-box { background: var(--bg-page); border-radius: var(--radius-sm); padding: 18px; margin-top: 18px; }
+.summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: var(--text-secondary); }
+.summary-row.total {
+    border-top: 1px solid var(--border-strong);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+    margin-top: 8px;
+    padding-top: 14px;
+}
+
+.mapping-area { background: var(--warning-soft); border-radius: var(--radius-sm); padding: 16px; margin-top: 16px; }
+.mapping-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 10px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
+    font-size: 13px;
+    align-items: center;
+}
+.mapping-row select { padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-size: 13px; width: 100%; }
+
+.no-items { text-align: center; padding: 26px; color: var(--text-muted); font-style: italic; font-size: 13px; }
+
+/* ============================================
+   Bağımsız (sidebar'sız) merkez sayfalar — düzenle/detay ekranları
+   ============================================ */
+.center-page { padding: 24px; }
+.center-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    box-shadow: var(--shadow-sm);
+}
+.center-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+.center-header h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+    padding: 18px;
+    background: var(--bg-page);
+    border-radius: var(--radius-md);
+}
+.info-item label { display: block; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; font-size: 12.5px; }
+.info-item p { font-size: 14.5px; color: var(--text-primary); }
+
+.form-section { margin-bottom: 26px; }
+.form-section h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.form-section h2 svg { color: var(--accent); }
+
+.product-list, .sim-list { background: var(--bg-page); padding: 12px; border-radius: var(--radius-md); margin-bottom: 15px; }
+.product-item, .sim-item { padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; font-size: 13.5px; }
+.product-item:last-child, .sim-item:last-child { margin-bottom: 0; }
+
+.alert-warning { background: var(--warning-soft); color: #92400e; border-color: var(--warning); }
+
+/* Satış listesi: küçük etiket rozetleri ve satır içi öğe listeleri */
+.filter-info { font-size: 11px; color: var(--success); margin-top: 3px; font-weight: 600; }
+.item-badge, .sim-badge {
+    color: #fff;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-block;
+    width: fit-content;
+    letter-spacing: 0.02em;
+}
+.item-badge { background: var(--accent); }
+.sim-badge { background: var(--success); }
+
+/* ============================================
+   Toplu Excel yükleme sayfaları
+   ============================================ */
+.subtitle { color: var(--text-secondary); margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+
+.info-box { background: var(--info-soft); padding: 16px 18px; border-radius: var(--radius-md); margin: 18px 0; border-left: 3px solid var(--info); }
+.info-box h4 { color: #0e7490; margin-bottom: 8px; font-size: 14px; }
+.info-box ul { margin-left: 18px; }
+.info-box li { margin: 6px 0; color: var(--text-secondary); font-size: 13px; }
+
+.upload-area {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    text-align: center;
+    background: var(--bg-page);
+    margin: 24px 0;
+    transition: background 0.15s, border-color 0.15s;
+    cursor: pointer;
+}
+.upload-area:hover { background: var(--accent-soft); border-color: var(--accent); }
+.upload-area.dragover { background: var(--accent-soft); border-color: var(--accent); }
+.upload-area.success { background: var(--success-soft); border-color: var(--success); }
+.upload-area h3 { color: var(--text-primary); margin-bottom: 8px; font-size: 15.5px; }
+.upload-area p { color: var(--text-secondary); margin-bottom: 16px; font-size: 13px; }
+
+.file-info { background: var(--bg-page); padding: 16px 18px; border-radius: var(--radius-md); margin: 18px 0; display: none; border-left: 3px solid var(--success); }
+.file-info.active { display: block; }
+.file-info h4 { font-size: 14px; margin-bottom: 12px; color: var(--success); }
+.file-info-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin-top: 8px; font-size: 13px; }
+.file-info-label { font-weight: 600; color: var(--text-secondary); }
+.file-info-value { color: var(--text-primary); }
+
+.progress-bar { width: 100%; height: 34px; background: var(--bg-hover); border-radius: 999px; overflow: hidden; margin: 18px 0; display: none; }
+.progress-bar.active { display: block; }
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.error-box { background: var(--danger-soft); color: #991b1b; padding: 18px; border-radius: var(--radius-md); border-left: 3px solid var(--danger); margin: 18px 0; }
+.stat-box.success { border-color: var(--success) !important; }
+.stat-box.danger { border-color: var(--danger) !important; }
+.error-list, .warning-list { margin: 0; padding-left: 18px; font-size: 12px; }
+.error-list li { color: var(--danger); }
+.warning-list li { color: #92400e; }
+.actions { text-align: center; margin-top: 26px; padding-top: 26px; border-top: 1px solid var(--border); }
+
+/* Toplu satış önizleme tablosunda satır durumu vurgusu */
+table tr.success { background: var(--success-soft); }
+table tr.error { background: var(--danger-soft); }
+table tr.warning { background: var(--warning-soft); }

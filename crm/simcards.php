@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'pagination.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -89,370 +90,17 @@ $stmt->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Sim Kartlar - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 250px;
-            height: 100vh;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-        }
-        .logo-sidebar {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .logo-sidebar span { color: #667eea; }
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .nav-item:hover { background: #f0f0f0; }
-        .nav-item.active { background: #667eea; color: white; }
-        .nav-icon { font-size: 20px; }
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .top-bar h1 { font-size: 28px; color: #333; }
-        .logout-btn {
-            padding: 10px 20px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-        }
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-box {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .stat-box h3 {
-            font-size: 32px;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        .stat-box p { color: #666; font-size: 14px; }
-        .action-bar {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .search-filter-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-            min-width: 300px;
-        }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            min-width: 180px;
-        }
-        .filter-group label {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        .search-input, .filter-select {
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .search-input {
-            flex: 1;
-        }
-        .filter-select {
-            width: 100%;
-            background: white;
-            cursor: pointer;
-        }
-        .search-input:focus, .filter-select:focus { 
-            outline: none; 
-            border-color: #667eea; 
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .btn-warning:hover { background: #e0a800; }
-        .btn-danger { background: #dc3545; color: white; font-size: 12px; padding: 6px 12px; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-edit { background: #17a2b8; color: white; font-size: 12px; padding: 6px 12px; }
-        .btn-edit:hover { background: #138496; }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .active-filters {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .filter-tag {
-            background: #667eea;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .filter-tag .remove {
-            cursor: pointer;
-            font-weight: bold;
-            opacity: 0.8;
-        }
-        .filter-tag .remove:hover {
-            opacity: 1;
-        }
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        table { width: 100%; border-collapse: collapse; }
-        th {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #555;
-        }
-        tr:hover { background: #f8f9fa; }
-        .no-data { text-align: center; padding: 40px; color: #999; }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .page-btn {
-            padding: 8px 12px;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            color: #333;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        .page-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: #f8f9fa;
-        }
-        .page-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-            font-weight: bold;
-        }
-        .page-dots {
-            padding: 8px 4px;
-            color: #999;
-            font-weight: bold;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .modal-header h2 { font-size: 24px; color: #333; }
-        .close-btn { font-size: 28px; cursor: pointer; color: #999; }
-        .close-btn:hover { color: #333; }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .form-group input:read-only {
-            background: #f5f5f5;
-            cursor: not-allowed;
-        }
-        .required { color: red; }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-    </style>
 </head>
 <body>
-    <!-- Hamburger Menu -->
-<button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <img src="assets/images/logo-light.png" alt="Logo" style="max-width: 200px; height: auto;">
-        <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item">
-                <span class="nav-icon">🏠</span>
-                <span>Ana Sayfa</span>
-            </a>
-            <a href="customers.php" class="nav-item">
-                <span class="nav-icon">👥</span>
-                <span>Müşteriler</span>
-            </a>
-            <a href="products.php" class="nav-item">
-                <span class="nav-icon">📦</span>
-                <span>Ürünler</span>
-            </a>
-            <a href="simcards.php" class="nav-item active">
-                <span class="nav-icon">📱</span>
-                <span>Sim Kartlar</span>
-            </a>
-            <a href="create-sale.php" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span>Satış</span>
-            </a>
-            <a href="sales-list.php" class="nav-item">
-                <span class="nav-icon">📋</span>
-                <span>Satış Listesi</span>
-            </a>
-            <a href="subscriptions.php" class="nav-item">
-                <span class="nav-icon">🔄</span>
-                <span>Abonelikler</span>
-            </a>
-            <a href="logout.php" class="nav-item" style="margin-top: auto;">
-                <span class="nav-icon">🚪</span>
-                <span>Çıkış Yap</span>
-            </a>
-        </nav>
-    </div>
+    <?php $active_page = 'simcards'; include 'partials/sidebar.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
         <div class="top-bar">
-            <h1>Sim Kart Yönetimi</h1>
-            <a href="logout.php" class="logout-btn">Çıkış Yap</a>
+            <h1><?php echo icon('sim'); ?> Sim Kart Yönetimi</h1>
         </div>
 
         <?php if(isset($_SESSION['success'])): ?>
@@ -499,7 +147,7 @@ $stmt->close();
                     </div>
                     
                     <div class="filter-group">
-                        <label>🏢 Şirket</label>
+                        <label>Şirket</label>
                         <select name="company" class="filter-select">
                             <option value="">Tüm Şirketler</option>
                             <option value="Waystech Bilişim" <?php echo $filter_company == 'Waystech Bilişim' ? 'selected' : ''; ?>>Waystech Bilişim</option>
@@ -509,7 +157,7 @@ $stmt->close();
                     </div>
                     
                     <div class="filter-group">
-                        <label>📡 Operatör</label>
+                        <label>Operatör</label>
                         <select name="operator" class="filter-select">
                             <option value="">Tüm Operatörler</option>
                             <option value="Vodafone" <?php echo $filter_operator == 'Vodafone' ? 'selected' : ''; ?>>Vodafone</option>
@@ -517,33 +165,33 @@ $stmt->close();
                             <option value="Türk Telekom" <?php echo $filter_operator == 'Türk Telekom' ? 'selected' : ''; ?>>Türk Telekom</option>
                         </select>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary">🔍 Filtrele</button>
-                    
+
+                    <button type="submit" class="btn btn-primary"><?php echo icon('filter'); ?> Filtrele</button>
+
                     <?php if($search || $filter_company || $filter_operator): ?>
-                        <a href="simcards.php" class="btn btn-warning">✖ Temizle</a>
+                        <a href="simcards.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                     <?php endif; ?>
                 </div>
 
                 <!-- Aktif Filtreler -->
                 <?php if($search || $filter_company || $filter_operator): ?>
                     <div class="active-filters">
-                        <strong style="color: #666; font-size: 13px;">Aktif Filtreler:</strong>
+                        <strong style="color: var(--text-secondary); font-size: 13px;">Aktif Filtreler:</strong>
                         <?php if($search): ?>
                             <div class="filter-tag">
-                                🔍 Arama: <?php echo htmlspecialchars($search); ?>
+                                Arama: <?php echo htmlspecialchars($search); ?>
                                 <span class="remove" onclick="removeFilter('search')">×</span>
                             </div>
                         <?php endif; ?>
                         <?php if($filter_company): ?>
                             <div class="filter-tag">
-                                🏢 <?php echo htmlspecialchars($filter_company); ?>
+                                <?php echo htmlspecialchars($filter_company); ?>
                                 <span class="remove" onclick="removeFilter('company')">×</span>
                             </div>
                         <?php endif; ?>
                         <?php if($filter_operator): ?>
                             <div class="filter-tag">
-                                📡 <?php echo htmlspecialchars($filter_operator); ?>
+                                <?php echo htmlspecialchars($filter_operator); ?>
                                 <span class="remove" onclick="removeFilter('operator')">×</span>
                             </div>
                         <?php endif; ?>
@@ -553,10 +201,10 @@ $stmt->close();
 
             <!-- Butonlar -->
             <div class="action-buttons" style="margin-top: 15px;">
-                <button onclick="openModal()" class="btn btn-success">➕ Sim Kart Ekle</button>
-                <a href="export-simcards.php?<?php echo http_build_query(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator]); ?>" class="btn btn-primary">📥 Excel İndir</a>
-                <a href="sample-simcards-template.php" class="btn btn-warning">📋 Şablon İndir</a>
-                <button onclick="document.getElementById('importFile').click()" class="btn btn-primary">📤 Excel Yükle</button>
+                <button onclick="openModal()" class="btn btn-primary"><?php echo icon('plus'); ?> Sim Kart Ekle</button>
+                <a href="export-simcards.php?<?php echo http_build_query(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator]); ?>" class="btn btn-secondary">Excel İndir</a>
+                <a href="sample-simcards-template.php" class="btn btn-secondary">Şablon İndir</a>
+                <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary"><?php echo icon('upload'); ?> Excel Yükle</button>
                 <form id="importForm" method="POST" action="import-simcards.php" enctype="multipart/form-data" style="display: none;">
                     <input type="file" id="importFile" name="excel_file" accept=".xlsx,.xls" onchange="this.form.submit()">
                 </form>
@@ -564,7 +212,7 @@ $stmt->close();
         </div>
 
         <!-- Sim Kart Tablosu -->
-        <div class="table-container">
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -587,23 +235,25 @@ $stmt->close();
                                 <td><?php echo htmlspecialchars($sim['category']); ?></td>
                                 <td><strong>₺<?php echo number_format($sim['total_cost'], 2); ?></strong></td>
                                 <td>
-                                    <span class="badge badge-<?php 
-                                        echo $sim['status'] == 'Stokta' ? 'success' : 
-                                             ($sim['status'] == 'Pasif' ? 'warning' : 'danger'); 
+                                    <span class="badge badge-<?php
+                                        echo $sim['status'] == 'Stokta' ? 'green' :
+                                             ($sim['status'] == 'Pasif' ? 'orange' : 'red');
                                     ?>">
                                         <?php echo $sim['status']; ?>
                                     </span>
                                 </td>
                                 <td style="text-align: center;">
-                                    <button onclick="editSimcard(<?php echo $sim['id']; ?>)" class="btn btn-edit">✏️ Düzenle</button>
-                                    <button onclick="deleteSimcard(<?php echo $sim['id']; ?>)" class="btn btn-danger">🗑️ Sil</button>
+                                    <div class="action-btns">
+                                        <button onclick="editSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                        <button onclick="deleteSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
                             <td colspan="7" class="no-data">
-                                <?php 
+                                <?php
                                 if($search || $filter_company || $filter_operator) {
                                     echo "Filtrelere uygun sonuç bulunamadı.";
                                 } else {
@@ -707,7 +357,7 @@ $stmt->close();
                     <textarea id="description" name="description" rows="3"></textarea>
                 </div>
                 
-                <button type="submit" class="btn btn-success" style="width: 100%;">💾 Kaydet</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;"><?php echo icon('check'); ?> Kaydet</button>
             </form>
         </div>
     </div>
@@ -782,26 +432,5 @@ $stmt->close();
             }
         }
     </script>
-    <script>
-function toggleMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-}
-
-document.addEventListener('click', function(event) {
-    if (window.innerWidth <= 768) {
-        const sidebar = document.querySelector('.sidebar');
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        
-        if (sidebar && menuBtn) {
-            if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
-                sidebar.classList.remove('active');
-            }
-        }
-    }
-});
-</script>
 </body>
 </html>

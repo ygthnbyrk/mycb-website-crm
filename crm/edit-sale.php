@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -49,139 +50,15 @@ $stmt_sims->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Satış Düzenle - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 40px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .header h1 { font-size: 24px; color: #333; }
-        .close-btn {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .info-item label {
-            display: block;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .info-item p {
-            font-size: 16px;
-            color: #333;
-        }
-        .form-section {
-            margin-bottom: 30px;
-        }
-        .form-section h2 {
-            font-size: 18px;
-            color: #667eea;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .form-group input[readonly] {
-            background: #f8f9fa;
-            color: #666;
-        }
-        .product-list, .sim-list {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        .product-item, .sim-item {
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-        .product-item:last-child, .sim-item:last-child {
-            margin-bottom: 0;
-        }
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        .btn-success {
-            background: #28a745;
-            color: white;
-            width: 100%;
-        }
-        .btn-success:hover { background: #218838; }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="center-page">
+    <div class="center-container">
+        <div class="center-header">
             <h1>Satış Düzenle #<?php echo $sale['id']; ?></h1>
-            <a href="sales-list.php" class="close-btn">✖ Kapat</a>
+            <a href="sales-list.php" class="btn btn-secondary"><?php echo icon('x'); ?> Kapat</a>
         </div>
 
         <?php if(isset($_SESSION['error'])): ?>
@@ -191,7 +68,7 @@ $stmt_sims->close();
         <?php endif; ?>
 
         <div class="alert alert-warning">
-            <strong>⚠️ Uyarı:</strong> Satış düzenleme sınırlıdır. Sadece tarih, fiyat ve notlar değiştirilebilir. Ürün/SIM değişikliği için satışı silin ve yeniden oluşturun.
+            <strong>Uyarı:</strong> Satış düzenleme sınırlıdır. Sadece tarih, fiyat ve notlar değiştirilebilir. Ürün/SIM değişikliği için satışı silin ve yeniden oluşturun.
         </div>
 
         <!-- Satış Bilgileri (Salt Okunur) -->
@@ -209,7 +86,7 @@ $stmt_sims->close();
         <!-- Ürünler -->
         <?php if($products->num_rows > 0): ?>
         <div class="form-section">
-            <h2>📦 Satılan Ürünler (Salt Okunur)</h2>
+            <h2><?php echo icon('package'); ?> Satılan Ürünler (Salt Okunur)</h2>
             <div class="product-list">
                 <?php while($product = $products->fetch_assoc()): ?>
                 <div class="product-item">
@@ -225,7 +102,7 @@ $stmt_sims->close();
         <!-- SIM Kartlar -->
         <?php if($simcards->num_rows > 0): ?>
         <div class="form-section">
-            <h2>📱 Satılan SIM Kartlar (Salt Okunur)</h2>
+            <h2><?php echo icon('sim'); ?> Satılan SIM Kartlar (Salt Okunur)</h2>
             <div class="sim-list">
                 <?php while($sim = $simcards->fetch_assoc()): ?>
                 <div class="sim-item">
@@ -242,7 +119,7 @@ $stmt_sims->close();
             <input type="hidden" name="sale_id" value="<?php echo $sale['id']; ?>">
 
             <div class="form-section">
-                <h2>✏️ Düzenlenebilir Bilgiler</h2>
+                <h2><?php echo icon('edit'); ?> Düzenlenebilir Bilgiler</h2>
                 
                 <div class="form-group">
                     <label>Satış Tarihi</label>
@@ -261,11 +138,11 @@ $stmt_sims->close();
 
                 <div class="form-group">
                     <label>Genel Toplam (₺)</label>
-                    <input type="number" step="0.01" name="total" value="<?php echo $sale['total']; ?>" readonly style="background: #f0f0f0; font-weight: bold;">
+                    <input type="number" step="0.01" name="total" value="<?php echo $sale['total']; ?>" readonly style="font-weight: 700;">
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-success">💾 Değişiklikleri Kaydet</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;"><?php echo icon('check'); ?> Değişiklikleri Kaydet</button>
         </form>
     </div>
 

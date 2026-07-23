@@ -4,6 +4,7 @@ error_reporting(E_ALL);
 
 try {
     require_once 'config.php';
+    require_once 'partials/icons.php';
 
     if (!isset($_SESSION['user_id'])) {
         throw new Exception('Oturum bulunamadı. Lütfen giriş yapın.');
@@ -55,7 +56,7 @@ try {
     }
     
     if (!$header_check_passed) {
-        $warning_msg = "⚠️ Başlık satırı tam eşleşmedi, ancak devam ediliyor. Beklenen sıra: " . implode(', ', $expected_headers);
+        $warning_msg = "Başlık satırı tam eşleşmedi, ancak devam ediliyor. Beklenen sıra: " . implode(', ', $expected_headers);
         $warnings_found[] = $warning_msg;
     }
     
@@ -355,64 +356,29 @@ if (empty($satis_tarihi)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Toplu Satış Önizleme</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f7fa; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 40px; }
-        h1 { color: #667eea; margin-bottom: 10px; }
-        .subtitle { color: #666; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #f0f0f0; }
-        .error-box { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545; margin: 20px 0; }
-        .alert { padding: 15px 20px; border-radius: 8px; margin: 20px 0; }
-        .alert-success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
-        .alert-danger { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
-        .stats-bar { display: flex; gap: 20px; margin: 30px 0; }
-        .stat-box { flex: 1; background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 2px solid #dee2e6; }
-        .stat-box h3 { font-size: 32px; margin-bottom: 5px; }
-        .stat-box.success { border-color: #28a745; }
-        .stat-box.danger { border-color: #dc3545; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-        th, td { padding: 10px 8px; border: 1px solid #ddd; text-align: left; }
-        th { background: #667eea; color: white; font-weight: 600; position: sticky; top: 0; }
-        tr.success { background: #d4edda; }
-        tr.error { background: #f8d7da; }
-        tr.warning { background: #fff3cd; }
-        .error-list, .warning-list { margin: 0; padding-left: 20px; font-size: 12px; }
-        .error-list li { color: #721c24; }
-        .warning-list li { color: #856404; }
-        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; text-decoration: none; display: inline-block; margin: 5px; transition: all 0.3s; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover:not(:disabled) { background: #218838; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
-        .actions { text-align: center; margin-top: 30px; padding-top: 30px; border-top: 2px solid #f0f0f0; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-    </style>
 </head>
-<body>
+<body class="center-page">
     <?php if (isset($error_message)): ?>
-        <div class="container">
-            <h1>❌ Hata</h1>
+        <div class="center-container" style="max-width: 700px;">
+            <h1 style="font-size: 20px; margin-bottom: 16px;">Hata</h1>
             <div class="error-box">
-                <h3>Bir hata oluştu:</h3>
+                <h3 style="margin-bottom: 8px;">Bir hata oluştu:</h3>
                 <p><strong><?php echo htmlspecialchars($error_message); ?></strong></p>
-                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                <p style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
                     Dosya: <?php echo htmlspecialchars($error_file); ?><br>
                     Satır: <?php echo $error_line; ?>
                 </p>
             </div>
             <div class="actions">
-                <a href="bulk-sales-upload.php" class="btn btn-secondary">← Geri Dön</a>
+                <a href="bulk-sales-upload.php" class="btn btn-secondary">Geri Dön</a>
             </div>
         </div>
     <?php else: ?>
-    <div class="container">
-        <h1>🔍 Toplu Satış Önizleme</h1>
+    <div class="center-container" style="max-width: 1400px;">
+        <h1 style="display:flex;align-items:center;gap:10px;font-size:20px;margin-bottom:6px;"><?php echo icon('search'); ?> Toplu Satış Önizleme</h1>
         <p class="subtitle">Excel verileriniz kontrol edildi, aşağıda sonuçları görüntüleyin</p>
         <div class="stats-bar">
             <div class="stat-box">
@@ -420,26 +386,26 @@ if (empty($satis_tarihi)) {
                 <p>Toplam Satır</p>
             </div>
             <div class="stat-box success">
-                <h3 style="color: #28a745;"><?php echo $valid_rows; ?></h3>
+                <h3 style="color: var(--success);"><?php echo $valid_rows; ?></h3>
                 <p>Geçerli Satır</p>
             </div>
             <div class="stat-box danger">
-                <h3 style="color: #dc3545;"><?php echo $error_rows; ?></h3>
+                <h3 style="color: var(--danger);"><?php echo $error_rows; ?></h3>
                 <p>Hatalı Satır</p>
             </div>
         </div>
         <?php if ($error_rows === 0): ?>
             <div class="alert alert-success">
-                <strong>✅ Tebrikler!</strong> Tüm satırlar geçerli. Devam ederseniz <?php echo $valid_rows; ?> adet satış kaydedilecek.
+                <strong>Tebrikler!</strong> Tüm satırlar geçerli. Devam ederseniz <?php echo $valid_rows; ?> adet satış kaydedilecek.
             </div>
         <?php else: ?>
             <div class="alert alert-danger">
-                <strong>⚠️ Dikkat!</strong> <?php echo $error_rows; ?> satırda hata bulundu. Hatalı satırlar işlenmeyecek, sadece geçerli <?php echo $valid_rows; ?> satır kaydedilecek.
+                <strong>Dikkat!</strong> <?php echo $error_rows; ?> satırda hata bulundu. Hatalı satırlar işlenmeyecek, sadece geçerli <?php echo $valid_rows; ?> satır kaydedilecek.
             </div>
         <?php endif; ?>
         <?php if (count($warnings_found) > 0): ?>
             <div class="alert alert-warning">
-                <strong>⚠️ Uyarılar:</strong>
+                <strong>Uyarılar:</strong>
                 <ul style="margin-left: 20px; margin-top: 10px;">
                     <?php foreach (array_unique($warnings_found) as $warning): ?>
                         <li><?php echo htmlspecialchars($warning); ?></li>
@@ -447,8 +413,8 @@ if (empty($satis_tarihi)) {
                 </ul>
             </div>
         <?php endif; ?>
-        <h3 style="margin: 30px 0 15px 0; color: #667eea;">📋 Satış Detayları</h3>
-        <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+        <h3 style="margin: 30px 0 15px 0; color: var(--text-primary); display:flex; align-items:center; gap:8px;"><?php echo icon('list'); ?> Satış Detayları</h3>
+        <div class="table-wrap" style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
             <table>
                 <thead>
                     <tr>
@@ -471,9 +437,9 @@ if (empty($satis_tarihi)) {
                             <td><strong><?php echo $sale['row_number']; ?></strong></td>
                             <td>
                                 <?php if ($sale['has_error']): ?>
-                                    <span class="badge badge-danger">❌ Hatalı</span>
+                                    <span class="badge badge-red">Hatalı</span>
                                 <?php else: ?>
-                                    <span class="badge badge-success">✅ Geçerli</span>
+                                    <span class="badge badge-green">Geçerli</span>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo htmlspecialchars($sale['musteri_adi']); ?></td>
@@ -482,51 +448,51 @@ if (empty($satis_tarihi)) {
                                     <strong><?php echo htmlspecialchars($sale['product_name']); ?></strong><br>
                                     <small><?php echo htmlspecialchars($sale['imei']); ?></small>
                                 <?php else: ?>
-                                    <span style="color: #999;">-</span>
+                                    <span style="color: var(--text-muted);">-</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($sale['urun_fiyati'])): ?>
-                                    <strong style="color: #667eea;">₺<?php echo number_format($sale['urun_fiyati'], 2); ?></strong>
+                                    <strong style="color: var(--accent);">₺<?php echo number_format($sale['urun_fiyati'], 2); ?></strong>
                                 <?php else: ?>
-                                    <span style="color: #999;">-</span>
+                                    <span style="color: var(--text-muted);">-</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ($sale['sim_name']): ?>
                                     <strong><?php echo htmlspecialchars($sale['sim_name']); ?></strong><br>
-                                    <small style="color: #28a745;">✓ <?php echo htmlspecialchars($sale['sim_telefon_display']); ?></small>
+                                    <small style="color: var(--success);"><?php echo htmlspecialchars($sale['sim_telefon_display']); ?></small>
                                 <?php else: ?>
-                                    <span style="color: #999;">-</span>
+                                    <span style="color: var(--text-muted);">-</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if (!empty($sale['sim_fiyati'])): ?>
-                                    <strong style="color: #28a745;">₺<?php echo number_format($sale['sim_fiyati'], 2); ?></strong>
+                                    <strong style="color: var(--success);">₺<?php echo number_format($sale['sim_fiyati'], 2); ?></strong>
                                 <?php else: ?>
-                                    <span style="color: #999;">-</span>
+                                    <span style="color: var(--text-muted);">-</span>
                                 <?php endif; ?>
                             </td>
-                            <td><strong style="color: #333; font-size: 16px;">₺<?php echo number_format($sale['total_price'], 2); ?></strong></td>
+                            <td><strong style="color: var(--text-primary); font-size: 15px;">₺<?php echo number_format($sale['total_price'], 2); ?></strong></td>
                             <td><?php echo htmlspecialchars($sale['plaka'] ? $sale['plaka'] : '-'); ?></td>
                             <td><?php echo htmlspecialchars($sale['satis_tarihi']); ?></td>
                             <td>
                                 <?php if (count($sale['errors']) > 0): ?>
                                     <ul class="error-list">
                                         <?php foreach ($sale['errors'] as $error): ?>
-                                            <li>❌ <?php echo htmlspecialchars($error); ?></li>
+                                            <li><?php echo htmlspecialchars($error); ?></li>
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php endif; ?>
                                 <?php if (count($sale['warnings']) > 0): ?>
                                     <ul class="warning-list">
                                         <?php foreach ($sale['warnings'] as $warning): ?>
-                                            <li>⚠️ <?php echo htmlspecialchars($warning); ?></li>
+                                            <li><?php echo htmlspecialchars($warning); ?></li>
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php endif; ?>
                                 <?php if (count($sale['errors']) == 0 && count($sale['warnings']) == 0): ?>
-                                    <span style="color: #28a745;">✓ Sorun yok</span>
+                                    <span style="color: var(--success);">Sorun yok</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -537,16 +503,16 @@ if (empty($satis_tarihi)) {
         <div class="actions">
             <?php if ($valid_rows > 0): ?>
                 <form method="POST" action="bulk-sales-process.php" style="display: inline;">
-                    <button type="submit" class="btn btn-success" onclick="return confirm('<?php echo $valid_rows; ?> adet satış kaydedilecek. Devam etmek istiyor musunuz?');">
-                        ✅ Geçerli Satışları Kaydet (<?php echo $valid_rows; ?> adet)
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('<?php echo $valid_rows; ?> adet satış kaydedilecek. Devam etmek istiyor musunuz?');">
+                        <?php echo icon('check'); ?> Geçerli Satışları Kaydet (<?php echo $valid_rows; ?> adet)
                     </button>
                 </form>
             <?php else: ?>
-                <button type="button" class="btn btn-success" disabled>
-                    ❌ Geçerli Satış Bulunamadı
+                <button type="button" class="btn btn-primary" disabled>
+                    Geçerli Satış Bulunamadı
                 </button>
             <?php endif; ?>
-            <a href="bulk-sales-upload.php" class="btn btn-secondary">← Yeni Dosya Yükle</a>
+            <a href="bulk-sales-upload.php" class="btn btn-secondary">Yeni Dosya Yükle</a>
         </div>
     </div>
     <?php endif; ?>

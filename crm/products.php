@@ -133,7 +133,7 @@ $stmt->close();
         </div>
 
         <!-- Ürün Tablosu -->
-        <div class="table-container">
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -150,20 +150,22 @@ $stmt->close();
                             <tr>
                                 <td>
                                     <strong><?php echo htmlspecialchars($product['product_name']); ?></strong><br>
-                                    <small style="color: #999;"><?php echo htmlspecialchars($product['model']); ?></small>
+                                    <small style="color: var(--text-muted);"><?php echo htmlspecialchars($product['model']); ?></small>
                                 </td>
                                 <td><?php echo htmlspecialchars($product['imei_number']); ?></td>
                                 <td><strong>₺<?php echo number_format($product['total_cost'], 2); ?></strong></td>
                                 <td>
                                     <?php if($product['status'] == 'Stokta'): ?>
-                                        <span class="badge badge-success">Stokta</span>
+                                        <span class="badge badge-green">Stokta</span>
                                     <?php else: ?>
-                                        <span class="badge badge-danger">Satıldı</span>
+                                        <span class="badge badge-red">Satıldı</span>
                                     <?php endif; ?>
                                 </td>
                                 <td style="text-align: center;">
-                                    <button onclick="editProduct(<?php echo $product['id']; ?>)" class="btn btn-edit">✏️ Düzenle</button>
-                                    <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="btn btn-danger">🗑️ Sil</button>
+                                    <div class="action-btns">
+                                        <button onclick="editProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                        <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -267,7 +269,7 @@ $stmt->close();
                     <textarea id="description" name="description" rows="3"></textarea>
                 </div>
                 
-                <button type="submit" class="btn btn-success" style="width: 100%;">💾 Kaydet</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;"><?php echo icon('check'); ?> Kaydet</button>
             </form>
         </div>
     </div>
@@ -347,29 +349,5 @@ $stmt->close();
             }
         }
     </script>
-
-<script>
-function toggleMenu() {
-    const sidebar = document.querySelector('.sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('active');
-    }
-}
-
-document.addEventListener('click', function(event) {
-    if (window.innerWidth <= 768) {
-        const sidebar = document.querySelector('.sidebar');
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-        
-        if (sidebar && menuBtn) {
-            if (!sidebar.contains(event.target) && !menuBtn.contains(event.target)) {
-                sidebar.classList.remove('active');
-            }
-        }
-    }
-});
-</script>
-</body>
-</html>
 </body>
 </html>
