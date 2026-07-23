@@ -26,10 +26,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['data_file']) && $_FI
             'products_reused'    => 0,
             'simcards_created'   => 0,
             'simcards_reused'    => 0,
+            'already_imported'   => 0,
             'row_errors'         => [],
         ];
 
         foreach ($groups as $gi => $g) {
+            // Bu grup daha onceki bir calistirmada zaten basariyla islendi mi?
+            // (ayni dosyayi guvenle tekrar yuklenebilir kilmak icin: bu gruptaki
+            // herhangi bir cihaz/sim zaten bir satisa baglanmissa grubu atla)
+            $already = false;
+            foreach (($g['products'] ?? []) as $p) {
+                $imei = trim($p['imei']);
+                $chk = $conn->prepare("SELECT 1 FROM sale_products WHERE imei_number = ? LIMIT 1");
+                $chk->bind_param("s", $imei);
+                $chk->execute();
+                if ($chk->get_result()->num_rows > 0) { $already = true; }
+                $chk->close();
+                if ($already) break;
+            }
+            if (!$already) {
+                foreach (($g['simcards'] ?? []) as $s) {
+                    $phone = trim($s['phone_number']);
+                    $chk = $conn->prepare("SELECT 1 FROM sale_simcards WHERE phone_number = ? LIMIT 1");
+                    $chk->bind_param("s", $phone);
+                    $chk->execute();
+                    if ($chk->get_result()->num_rows > 0) { $already = true; }
+                    $chk->close();
+                    if ($already) break;
+                }
+            }
+            if ($already) {
+                $stats['already_imported']++;
+                continue;
+            }
+
             $conn->begin_transaction();
             try {
                 // 1) Müşteriyi bul / oluştur
@@ -218,6 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['data_file']) && $_FI
                 <div class="info-item"><label>Mevcut Ürün Kullanıldı</label><p><?php echo $stats['products_reused']; ?></p></div>
                 <div class="info-item"><label>Yeni Sim Kart</label><p><?php echo $stats['simcards_created']; ?></p></div>
                 <div class="info-item"><label>Mevcut Sim Kullanıldı</label><p><?php echo $stats['simcards_reused']; ?></p></div>
+                <div class="info-item"><label>Zaten Yüklenmişti (Atlandı)</label><p><?php echo $stats['already_imported']; ?></p></div>
                 <div class="info-item"><label>Hatalı Grup</label><p><?php echo count($stats['row_errors']); ?></p></div>
             </div>
             <?php if (!empty($stats['row_errors'])): ?>
