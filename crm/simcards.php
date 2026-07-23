@@ -391,7 +391,7 @@ $stmt->close();
         }
 
         function editSimcard(id) {
-            fetch('/crm/get-simcard.php?id=' + id)
+            fetch('get-simcard.php?id=' + id)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
@@ -421,7 +421,7 @@ $stmt->close();
 
         function deleteSimcard(id) {
             if(confirm('Bu sim kartı silmek istediğinizden emin misiniz?')) {
-                window.location.href = '/crm/delete-simcard.php?id=' + id;
+                window.location.href = 'delete-simcard.php?id=' + id;
             }
         }
 

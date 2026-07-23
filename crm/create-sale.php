@@ -175,7 +175,7 @@ $user_name = $_SESSION['user_name'];
 
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                fetch('/crm/search-customer.php?q=' + encodeURIComponent(search))
+                fetch('search-customer.php?q=' + encodeURIComponent(search))
                     .then(r => r.json())
                     .then(data => {
                         if (data.length > 0) {
@@ -218,7 +218,7 @@ $user_name = $_SESSION['user_name'];
 
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                fetch('/crm/search-products-list.php?q=' + encodeURIComponent(search))
+                fetch('search-products-list.php?q=' + encodeURIComponent(search))
                     .then(r => r.json())
                     .then(data => {
                         if (data.length > 0) {
@@ -268,7 +268,7 @@ $user_name = $_SESSION['user_name'];
 
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                fetch('/crm/search-simcards-list.php?q=' + encodeURIComponent(search))
+                fetch('search-simcards-list.php?q=' + encodeURIComponent(search))
                     .then(r => r.json())
                     .then(data => {
                         if (data.length > 0) {

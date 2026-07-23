@@ -211,7 +211,7 @@ $stmt->close();
         }
 
         function editCustomer(id) {
-            fetch('/crm/get-customer.php?id=' + id)
+            fetch('get-customer.php?id=' + id)
                 .then(response => response.json())
                 .then(data => {
                     if(data.error) {
@@ -236,7 +236,7 @@ $stmt->close();
 
         function deleteCustomer(id) {
             if(confirm('Bu müşteriyi silmek istediğinizden emin misiniz?')) {
-                window.location.href = '/crm/delete-customer.php?id=' + id;
+                window.location.href = 'delete-customer.php?id=' + id;
             }
         }
 
