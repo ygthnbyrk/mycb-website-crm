@@ -399,34 +399,45 @@ table tbody tr:last-child td { border-bottom: none; }
     background: var(--bg-page);
     padding: 24px;
     position: relative;
+    text-align: center;
 }
 .hub-logout {
     position: absolute;
     top: 20px;
     right: 20px;
 }
-.hub-logo { margin-bottom: 8px; }
-.hub-logo img { max-width: 180px; }
-.hub-title { text-align: center; color: var(--text-secondary); font-size: 14px; margin-bottom: 36px; }
+.hub-logo { margin-bottom: 6px; }
+.hub-logo img { max-width: 140px; width: 100%; height: auto; display: inline-block; }
+.hub-title { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
 
 .hub-options {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(220px, 280px));
-    gap: 24px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-.hub-card {
+.hub-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-width: 180px;
+    padding: 16px 30px;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 36px 28px;
-    text-align: center;
-    text-decoration: none;
+    border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, color 0.15s;
 }
-.hub-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--accent); }
-.hub-card .hub-icon {
+.hub-btn svg { width: 20px; height: 20px; }
+.hub-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent); color: var(--accent); }
+
+.hub-icon {
     width: 56px;
     height: 56px;
     border-radius: var(--radius-md);
@@ -438,12 +449,11 @@ table tbody tr:last-child td { border-bottom: none; }
     margin: 0 auto 18px;
 }
 .hub-icon svg { width: 28px; height: 28px; }
-.hub-icon.hub-icon-lg svg { width: 36px; height: 36px; }
-.hub-card h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-.hub-card p { font-size: 12.5px; color: var(--text-muted); }
+.hub-icon.hub-icon-lg svg { width: 32px; height: 32px; }
 
-@media screen and (max-width: 560px) {
-    .hub-options { grid-template-columns: 1fr; width: 100%; max-width: 320px; }
+@media screen and (max-width: 480px) {
+    .hub-options { flex-direction: column; width: 100%; max-width: 260px; }
+    .hub-btn { width: 100%; }
 }
 
 /* ============================================
