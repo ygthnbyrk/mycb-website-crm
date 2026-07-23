@@ -159,13 +159,13 @@ $user_name = $_SESSION['user_name'];
             const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
             
             if (!validExtensions.includes(fileExtension)) {
-                alert('❌ Lütfen sadece Excel dosyası yükleyin! (.xls veya .xlsx)');
+                alert('Lütfen sadece Excel dosyası yükleyin! (.xls veya .xlsx)');
                 excelFile.value = '';
                 return;
             }
             
             if (file.size > 5 * 1024 * 1024) { // 5MB
-                alert('❌ Dosya boyutu 5MB\'dan büyük olamaz!');
+                alert('Dosya boyutu 5MB\'dan büyük olamaz!');
                 excelFile.value = '';
                 return;
             }
@@ -220,28 +220,28 @@ $user_name = $_SESSION['user_name'];
                     dataRows.textContent = (cleanedData.length - 1) + ' satır (başlık hariç)';
                     
                     progressFill.style.width = '100%';
-                    progressFill.textContent = '✓ Hazır!';
+                    progressFill.textContent = 'Hazır!';
                     
                     setTimeout(() => {
                         progressBar.classList.remove('active');
                         fileInfo.classList.add('active');
                         uploadArea.classList.add('success');
-                        uploadArea.querySelector('h3').textContent = '✅ Dosya Yüklendi!';
+                        uploadArea.querySelector('h3').textContent = 'Dosya Yüklendi!';
                         uploadArea.querySelector('p').textContent = 'Önizleme için devam edebilirsiniz';
                         submitBtn.disabled = false;
                     }, 500);
                     
-                    console.log('✅ Excel başarıyla okundu:', cleanedData.length, 'satır');
+                    console.log('Excel başarıyla okundu:', cleanedData.length, 'satır');
                     
                 } catch (error) {
                     console.error('Excel okuma hatası:', error);
-                    alert('❌ Excel dosyası okunamadı: ' + error.message);
+                    alert('Excel dosyası okunamadı: ' + error.message);
                     removeFile();
                 }
             };
             
             reader.onerror = function() {
-                alert('❌ Dosya okuma hatası!');
+                alert('Dosya okuma hatası!');
                 removeFile();
             };
             
@@ -269,7 +269,7 @@ $user_name = $_SESSION['user_name'];
         // Form submit - ilerleme göster
         uploadForm.addEventListener('submit', (e) => {
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ İşleniyor...';
+            submitBtn.textContent = 'İşleniyor...';
         });
     </script>
 </body>

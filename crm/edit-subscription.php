@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'partials/icons.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -42,131 +43,15 @@ if ($subscription['item_type'] === 'product') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Abonelik Düzenle - CRM</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f5f7fa;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .header h1 { font-size: 24px; color: #333; }
-        .close-btn {
-            padding: 8px 16px;
-            background: #dc3545;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .info-item label {
-            display: block;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .info-item p {
-            font-size: 16px;
-            color: #333;
-        }
-        .form-section {
-            margin-bottom: 30px;
-        }
-        .form-section h2 {
-            font-size: 18px;
-            color: #667eea;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .form-group input[readonly] {
-            background: #f8f9fa;
-            color: #666;
-        }
-        .required { color: red; }
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-        .btn-success {
-            background: #28a745;
-            color: white;
-            width: 100%;
-        }
-        .btn-success:hover { background: #218838; }
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
+<body class="center-page">
+    <div class="center-container">
+        <div class="center-header">
             <h1>Abonelik Düzenle</h1>
-            <a href="subscriptions.php" class="close-btn">✖ Kapat</a>
+            <a href="subscriptions.php" class="btn btn-secondary"><?php echo icon('x'); ?> Kapat</a>
         </div>
 
         <?php if(isset($_SESSION['error'])): ?>
@@ -214,7 +99,7 @@ if ($subscription['item_type'] === 'product') {
             <input type="hidden" name="item_type" value="<?php echo $subscription['item_type']; ?>">
 
             <div class="form-section">
-                <h2>🔄 Durum Güncelle</h2>
+                <h2><?php echo icon('refresh'); ?> Durum Güncelle</h2>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -235,7 +120,7 @@ if ($subscription['item_type'] === 'product') {
             <div id="renewal-fields" style="display: none;">
                 <!-- ÜRÜN YENİLEME -->
                 <div id="product-renewal" class="form-section" style="display: none;">
-                    <h2>💵 Cihaz Yenileme</h2>
+                    <h2><?php echo icon('dollar'); ?> Cihaz Yenileme</h2>
                     
                     <div class="form-row">
                         <div class="form-group">
@@ -262,7 +147,7 @@ if ($subscription['item_type'] === 'product') {
 
                 <!-- SIM KART YENİLEME -->
                 <div id="simcard-renewal" class="form-section" style="display: none;">
-                    <h2 style="color: #28a745;">💵 SIM Kart Yenileme</h2>
+                    <h2 style="color: var(--success);"><?php echo icon('dollar'); ?> SIM Kart Yenileme</h2>
                     
                     <div class="form-row">
                         <div class="form-group">
@@ -282,7 +167,7 @@ if ($subscription['item_type'] === 'product') {
                         </div>
                     </div>
 
-                    <h2 style="color: #dc8700; margin-top: 20px;">💰 SIM Kart Maliyet</h2>
+                    <h2 style="color: var(--warning); margin-top: 20px;"><?php echo icon('dollar'); ?> SIM Kart Maliyet</h2>
                     
                     <div class="form-row">
                         <div class="form-group">
@@ -302,32 +187,32 @@ if ($subscription['item_type'] === 'product') {
                         </div>
                     </div>
 
-                    <h2 style="color: #7952d3; margin-top: 20px;">📊 Kâr Hesaplama</h2>
-                    
+                    <h2 style="color: var(--purple); margin-top: 20px;">Kâr Hesaplama</h2>
+
                     <div class="form-row">
                         <div class="form-group">
-                            <label style="font-size: 16px; color: #7952d3;">SIM Kart Kârı</label>
-                            <input type="number" step="0.01" id="sim_profit_display" readonly style="font-size: 18px; font-weight: bold; background: #f0f0ff;">
-                            <small style="color: #666;">Hesaplama: Yenileme Miktarı - Yenileme Maliyeti</small>
+                            <label style="font-size: 14px; color: var(--purple);">SIM Kart Kârı</label>
+                            <input type="number" step="0.01" id="sim_profit_display" readonly style="font-size: 16px; font-weight: 700;">
+                            <small style="color: var(--text-secondary);">Hesaplama: Yenileme Miktarı - Yenileme Maliyeti</small>
                         </div>
                         <div class="form-group">
-                            <label style="font-size: 16px; color: #7952d3;">Abonelik Geliri</label>
-                            <input type="number" step="0.01" name="subscription_revenue" id="subscription_revenue_sim" readonly style="font-size: 18px; font-weight: bold; background: #f0fff0;">
-                            <small style="color: #666;">SIM Kart Kârı ile aynı</small>
+                            <label style="font-size: 14px; color: var(--purple);">Abonelik Geliri</label>
+                            <input type="number" step="0.01" name="subscription_revenue" id="subscription_revenue_sim" readonly style="font-size: 16px; font-weight: 700;">
+                            <small style="color: var(--text-secondary);">SIM Kart Kârı ile aynı</small>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="form-section">
-                <h2>📝 Notlar</h2>
+                <h2>Notlar</h2>
                 <div class="form-group">
                     <label>Yenileme veya iptal ile ilgili notlar</label>
                     <textarea name="notes" rows="4" placeholder="Yenileme veya iptal ile ilgili notlar..."><?php echo htmlspecialchars($subscription['notes'] ?? ''); ?></textarea>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-success">💾 Güncelle</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;"><?php echo icon('check'); ?> Güncelle</button>
         </form>
     </div>
 

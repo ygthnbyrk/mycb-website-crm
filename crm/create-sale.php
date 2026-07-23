@@ -79,7 +79,7 @@ $user_name = $_SESSION['user_name'];
                 </div>
 
                 <div id="product_list" class="item-list" style="display: none;">
-                    <div class="item-row" style="background: #f8f9fa; font-weight: 600;">
+                    <div class="item-row" style="background: var(--bg-page); font-weight: 600;">
                         <div>Cihaz Bilgisi</div>
                         <div>Plaka</div>
                         <div>Fiyat (₺)</div>
@@ -103,7 +103,7 @@ $user_name = $_SESSION['user_name'];
                 </div>
 
                 <div id="simcard_list" class="item-list" style="display: none;">
-                    <div class="item-row" style="background: #f8f9fa; font-weight: 600;">
+                    <div class="item-row" style="background: var(--bg-page); font-weight: 600;">
                         <div>Sim Kart Bilgisi</div>
                         <div>Operatör</div>
                         <div>Fiyat (₺)</div>

@@ -338,7 +338,7 @@ $stmt->close();
                                     </td>
                                     <td>
                                         <strong style="font-size: 12px;"><?php echo htmlspecialchars($sale['customer_name']); ?></strong><br>
-                                        <small style="color: #999; font-size: 10px;"><?php echo htmlspecialchars($sale['tax_number']); ?></small>
+                                        <small style="color: var(--text-muted); font-size: 10px;"><?php echo htmlspecialchars($sale['tax_number']); ?></small>
                                     </td>
                                     <td>
                                         <div class="item-list">
@@ -346,7 +346,7 @@ $stmt->close();
                                                 <div class="item-row">
                                                     <span class="item-badge">CİHAZ</span>
                                                     <strong><?php echo htmlspecialchars($p['model']); ?></strong>
-                                                    <small style="color: #666;">
+                                                    <small style="color: var(--text-secondary);">
                                                         IMEI: <?php echo htmlspecialchars($p['imei_number']); ?>
                                                         <?php if($p['plate']): ?>
                                                             • <?php echo htmlspecialchars($p['plate']); ?>
@@ -362,18 +362,18 @@ $stmt->close();
                                                 <div class="item-row">
                                                     <span class="sim-badge">SIM</span>
                                                     <strong><?php echo htmlspecialchars($s['phone_number']); ?></strong>
-                                                    <small style="color: #666;"><?php echo htmlspecialchars($s['operator']); ?></small>
+                                                    <small style="color: var(--text-secondary);"><?php echo htmlspecialchars($s['operator']); ?></small>
                                                 </div>
                                             <?php endwhile; ?>
                                         </div>
                                     </td>
                                     <td style="text-align: center;">
-                                        <strong style="color: #667eea; font-size: 14px;"><?php echo $total_items; ?></strong>
+                                        <strong style="color: var(--accent); font-size: 14px;"><?php echo $total_items; ?></strong>
                                     </td>
                                     <td style="text-align: right;">
-                                        <div style="font-size: 10px; color: #999;">Ara: ₺<?php echo number_format($sale['subtotal'], 2); ?></div>
-                                        <div style="font-size: 10px; color: #999;">KDV: ₺<?php echo number_format($sale['vat'], 2); ?></div>
-                                        <strong style="color: #28a745; font-size: 13px;">₺<?php echo number_format($sale['total'], 2); ?></strong>
+                                        <div style="font-size: 10px; color: var(--text-muted);">Ara: ₺<?php echo number_format($sale['subtotal'], 2); ?></div>
+                                        <div style="font-size: 10px; color: var(--text-muted);">KDV: ₺<?php echo number_format($sale['vat'], 2); ?></div>
+                                        <strong style="color: var(--success); font-size: 13px;">₺<?php echo number_format($sale['total'], 2); ?></strong>
                                     </td>
                                     <td>
                                         <div class="action-btns">
