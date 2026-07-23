@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $update_stmt->execute();
                 $update_stmt->close();
                 
-                header('Location: dashboard.php');
+                header('Location: hub.php');
                 exit();
             } else {
                 $error = 'E-posta veya şifre hatalı.';
