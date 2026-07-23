@@ -341,9 +341,9 @@ $stmt->close();
                                         <small style="color: var(--text-muted); font-size: 10px;"><?php echo htmlspecialchars($sale['tax_number']); ?></small>
                                     </td>
                                     <td>
-                                        <div class="item-list">
+                                        <div class="item-mini-list">
                                             <?php while($p = $products->fetch_assoc()): ?>
-                                                <div class="item-row">
+                                                <div class="item-mini">
                                                     <span class="item-badge">CİHAZ</span>
                                                     <strong><?php echo htmlspecialchars($p['model']); ?></strong>
                                                     <small style="color: var(--text-secondary);">
@@ -357,11 +357,11 @@ $stmt->close();
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="item-list">
+                                        <div class="item-mini-list">
                                             <?php while($s = $simcards->fetch_assoc()): ?>
-                                                <div class="item-row">
+                                                <div class="item-mini">
                                                     <span class="sim-badge">SIM</span>
-                                                    <strong><?php echo htmlspecialchars($s['phone_number']); ?></strong>
+                                                    <strong class="phone-number"><?php echo htmlspecialchars($s['phone_number']); ?></strong>
                                                     <small style="color: var(--text-secondary);"><?php echo htmlspecialchars($s['operator']); ?></small>
                                                 </div>
                                             <?php endwhile; ?>
