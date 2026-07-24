@@ -27,13 +27,25 @@ $conn->query("CREATE TABLE IF NOT EXISTS parasut_tokens (
 $conn->query("CREATE TABLE IF NOT EXISTS parasut_cache (
     year INT PRIMARY KEY,
     buckets_json LONGTEXT,
+    monthly_json LONGTEXT,
     total_revenue DECIMAL(12,2) DEFAULT 0,
     total_cost DECIMAL(12,2) DEFAULT 0,
     total_profit DECIMAL(12,2) DEFAULT 0,
     excluded_total DECIMAL(12,2) DEFAULT 0,
     excluded_count INT DEFAULT 0,
+    vat_collected DECIMAL(12,2) DEFAULT 0,
+    vat_paid DECIMAL(12,2) DEFAULT 0,
     synced_at DATETIME
 )");
+if ($conn->query("SHOW COLUMNS FROM parasut_cache LIKE 'monthly_json'")->num_rows === 0) {
+    $conn->query("ALTER TABLE parasut_cache ADD COLUMN monthly_json LONGTEXT");
+}
+if ($conn->query("SHOW COLUMNS FROM parasut_cache LIKE 'vat_collected'")->num_rows === 0) {
+    $conn->query("ALTER TABLE parasut_cache ADD COLUMN vat_collected DECIMAL(12,2) DEFAULT 0");
+}
+if ($conn->query("SHOW COLUMNS FROM parasut_cache LIKE 'vat_paid'")->num_rows === 0) {
+    $conn->query("ALTER TABLE parasut_cache ADD COLUMN vat_paid DECIMAL(12,2) DEFAULT 0");
+}
 
 function parasut_token_row($conn) {
     $res = $conn->query("SELECT * FROM parasut_tokens ORDER BY id DESC LIMIT 1");
@@ -153,11 +165,14 @@ function parasut_aggregate_year($conn, $invoices, $included_by_id, $year) {
     $buckets = [];
     $excluded_total = 0.0;
     $excluded_count = 0;
+    $monthly = [];
+    for ($m = 1; $m <= 12; $m++) $monthly[$m] = ['revenue' => 0.0, 'vat_collected' => 0.0, 'vat_paid' => 0.0];
 
     foreach ($invoices as $inv) {
         $attr = $inv['attributes'] ?? [];
         $issue_date = $attr['issue_date'] ?? '';
         if (substr($issue_date, 0, 4) !== (string)$year) continue;
+        $month_num = (int)substr($issue_date, 5, 2);
 
         foreach (($inv['relationships']['details']['data'] ?? []) as $ref) {
             $key = $ref['type'] . ':' . $ref['id'];
@@ -172,12 +187,18 @@ function parasut_aggregate_year($conn, $invoices, $included_by_id, $year) {
             $name = $product_name ?: ($detail['description'] ?? '(isimsiz)');
             $qty = (float)($detail['quantity'] ?? 0);
             $revenue = (float)($detail['net_total'] ?? 0);
+            $vat = (float)($detail['vat'] ?? 0);
             $upper = normalize_tr_upper($name);
 
             if (mb_strpos($upper, 'FIYAT FARK') !== false || mb_strpos($upper, 'FİYAT FARK') !== false) {
                 $excluded_total += $revenue;
                 $excluded_count++;
                 continue;
+            }
+
+            if (isset($monthly[$month_num])) {
+                $monthly[$month_num]['revenue'] += $revenue;
+                $monthly[$month_num]['vat_collected'] += $vat;
             }
 
             if (mb_strpos($upper, 'YENILEME') !== false || mb_strpos($upper, 'YENİLEME') !== false) {
@@ -232,12 +253,53 @@ function parasut_aggregate_year($conn, $invoices, $included_by_id, $year) {
 
     return [
         'buckets' => $buckets,
+        'monthly' => $monthly,
         'total_revenue' => $total_revenue,
         'total_cost' => $total_cost,
         'total_profit' => $total_cost_known - $total_cost,
         'excluded_total' => $excluded_total,
         'excluded_count' => $excluded_count,
     ];
+}
+
+function parasut_fetch_all_purchase_bills($access_token, $company_id) {
+    $all = [];
+    $page = 1;
+    $per_page = 25;
+    $max_pages = 30;
+    do {
+        $path = '/purchase_bills?page[size]=' . $per_page . '&page[number]=' . $page . '&sort=-issue_date';
+        $resp = parasut_api_get($access_token, $company_id, $path);
+        if ($resp['code'] !== 200 || !isset($resp['body']['data'])) {
+            $detail = '';
+            if (isset($resp['body']['errors'][0])) {
+                $e0 = $resp['body']['errors'][0];
+                $detail = ($e0['title'] ?? '') . ': ' . ($e0['detail'] ?? '');
+            }
+            return ['ok' => false, 'error' => 'HTTP ' . $resp['code'] . ($detail ? ' — ' . $detail : '')];
+        }
+        $batch = $resp['body']['data'];
+        $all = array_merge($all, $batch);
+        $page++;
+        if (count($batch) === $per_page && $page <= $max_pages) usleep(400000);
+    } while (count($batch) === $per_page && $page <= $max_pages);
+    return ['ok' => true, 'bills' => $all];
+}
+
+function parasut_aggregate_purchase_vat($bills, $year) {
+    $monthly_vat_paid = [];
+    for ($m = 1; $m <= 12; $m++) $monthly_vat_paid[$m] = 0.0;
+    $total_vat_paid = 0.0;
+    foreach ($bills as $bill) {
+        $attr = $bill['attributes'] ?? [];
+        $issue_date = $attr['issue_date'] ?? '';
+        if (substr($issue_date, 0, 4) !== (string)$year) continue;
+        $month_num = (int)substr($issue_date, 5, 2);
+        $vat = (float)($attr['total_vat'] ?? 0);
+        if (isset($monthly_vat_paid[$month_num])) $monthly_vat_paid[$month_num] += $vat;
+        $total_vat_paid += $vat;
+    }
+    return ['monthly_vat_paid' => $monthly_vat_paid, 'total_vat_paid' => $total_vat_paid];
 }
 
 // Baglanma islemi (kod + sirket id gonderildi)
@@ -283,13 +345,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $error = 'Erişim jetonu yenilenemedi, bağlantıyı tekrar kur.';
     } else {
         $fetched = parasut_fetch_all_invoices($auth['access_token'], $auth['company_id']);
+        $fetched_bills = parasut_fetch_all_purchase_bills($auth['access_token'], $auth['company_id']);
         if (!$fetched['ok']) {
-            $error = 'Senkronizasyon başarısız: ' . htmlspecialchars($fetched['error']);
+            $error = 'Senkronizasyon başarısız (satış): ' . htmlspecialchars($fetched['error']);
+        } elseif (!$fetched_bills['ok']) {
+            $error = 'Senkronizasyon başarısız (gider): ' . htmlspecialchars($fetched_bills['error']);
         } else {
             $agg = parasut_aggregate_year($conn, $fetched['invoices'], $fetched['included'], $sync_year);
-            $stmt = $conn->prepare("REPLACE INTO parasut_cache (year, buckets_json, total_revenue, total_cost, total_profit, excluded_total, excluded_count, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+            $vat_agg = parasut_aggregate_purchase_vat($fetched_bills['bills'], $sync_year);
+
+            foreach ($agg['monthly'] as $m => $row) {
+                $agg['monthly'][$m]['vat_paid'] = $vat_agg['monthly_vat_paid'][$m];
+            }
+            $vat_collected_total = 0.0;
+            foreach ($agg['monthly'] as $row) $vat_collected_total += $row['vat_collected'];
+
+            $stmt = $conn->prepare("REPLACE INTO parasut_cache (year, buckets_json, monthly_json, total_revenue, total_cost, total_profit, excluded_total, excluded_count, vat_collected, vat_paid, synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             $buckets_json = json_encode($agg['buckets'], JSON_UNESCAPED_UNICODE);
-            $stmt->bind_param("isddddi", $sync_year, $buckets_json, $agg['total_revenue'], $agg['total_cost'], $agg['total_profit'], $agg['excluded_total'], $agg['excluded_count']);
+            $monthly_json = json_encode($agg['monthly'], JSON_UNESCAPED_UNICODE);
+            $stmt->bind_param("issddddidd", $sync_year, $buckets_json, $monthly_json, $agg['total_revenue'], $agg['total_cost'], $agg['total_profit'], $agg['excluded_total'], $agg['excluded_count'], $vat_collected_total, $vat_agg['total_vat_paid']);
             $stmt->execute();
             $success = $sync_year . ' yılı senkronize edildi.';
             $p_selected_year = $sync_year;
@@ -309,6 +383,47 @@ if ($is_connected) {
     $cache_row = $cres->num_rows ? $cres->fetch_assoc() : null;
 }
 $cached_buckets = $cache_row ? json_decode($cache_row['buckets_json'], true) : [];
+$cached_monthly = $cache_row && !empty($cache_row['monthly_json']) ? json_decode($cache_row['monthly_json'], true) : [];
+
+function svg_month_bars($months, $height = 260, $color = 'var(--accent)') {
+    $n = count($months);
+    $unit = 64;
+    $w = $n * $unit;
+    $top_pad = 30;
+    $bottom_pad = 28;
+    $chart_h = $height - $top_pad - $bottom_pad;
+    $max = 0;
+    foreach ($months as $m) $max = max($max, $m['value']);
+    if ($max <= 0) $max = 1;
+    $bar_w = $unit * 0.52;
+    $svg = '<svg class="month-chart" viewBox="0 0 ' . $w . ' ' . $height . '" preserveAspectRatio="xMidYMid meet">';
+    foreach ($months as $i => $m) {
+        $x = $i * $unit + ($unit - $bar_w) / 2;
+        $h = round(($m['value'] / $max) * $chart_h);
+        if ($m['value'] > 0) $h = max($h, 3);
+        $y = $top_pad + ($chart_h - $h);
+        $label_val = $m['value'] >= 1000 ? round($m['value'] / 1000, 1) . 'K' : number_format($m['value'], 0, ',', '.');
+        $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' ₺';
+        $svg .= '<g>';
+        $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $bar_w . '" height="' . $h . '" rx="5" fill="' . $color . '"><title>' . $title . '</title></rect>';
+        if ($m['value'] > 0) {
+            $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($y - 8) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary)">' . $label_val . '</text>';
+        }
+        $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($height - 8) . '" text-anchor="middle" font-size="12" fill="var(--text-muted)">' . htmlspecialchars($m['label']) . '</text>';
+        $svg .= '</g>';
+    }
+    $baseline = $top_pad + $chart_h;
+    $svg .= '<line x1="0" y1="' . $baseline . '" x2="' . $w . '" y2="' . $baseline . '" stroke="var(--border)" stroke-width="1"/>';
+    $svg .= '</svg>';
+    return $svg;
+}
+
+$ay_kisa_p = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+$revenue_chart_data = [];
+foreach ($ay_kisa_p as $i => $label) {
+    $mnum = $i + 1;
+    $revenue_chart_data[] = ['label' => $label, 'value' => (float)($cached_monthly[$mnum]['revenue'] ?? 0)];
+}
 
 $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencode(PARASUT_CLIENT_ID) . '&redirect_uri=' . urlencode(PARASUT_REDIRECT_URI) . '&response_type=code';
 ?>
@@ -410,6 +525,60 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                         <div class="number"><?php echo number_format((float)$cache_row['total_profit'], 0, ',', '.'); ?> ₺</div>
                         <small>&nbsp;</small>
                     </div>
+                </div>
+
+                <div class="detail-card" style="margin-bottom:16px;">
+                    <h3><?php echo icon('chart'); ?> Aylık Ciro — <?php echo $p_selected_year; ?></h3>
+                    <?php echo svg_month_bars($revenue_chart_data); ?>
+                </div>
+
+                <div class="detail-card" style="margin-bottom:16px;">
+                    <h3><?php echo icon('dollar'); ?> KDV Özeti — <?php echo $p_selected_year; ?></h3>
+                    <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--border);text-align:left;color:var(--text-muted);">
+                                <th style="padding:8px 6px;">Ay</th>
+                                <th style="padding:8px 6px;text-align:right;">KDV Tahsil Edilen</th>
+                                <th style="padding:8px 6px;text-align:right;">KDV Ödenen</th>
+                                <th style="padding:8px 6px;text-align:right;">Net KDV</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $yearly_collected = 0.0;
+                            $yearly_paid = 0.0;
+                            foreach ($ay_kisa_p as $i => $label):
+                                $mnum = $i + 1;
+                                $collected = (float)($cached_monthly[$mnum]['vat_collected'] ?? 0);
+                                $paid = (float)($cached_monthly[$mnum]['vat_paid'] ?? 0);
+                                $net = $collected - $paid;
+                                $yearly_collected += $collected;
+                                $yearly_paid += $paid;
+                            ?>
+                                <tr style="border-bottom:1px solid var(--bg-hover);">
+                                    <td style="padding:7px 6px;color:var(--text-secondary);"><?php echo $label; ?></td>
+                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($collected, 0, ',', '.'); ?> ₺</td>
+                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($paid, 0, ',', '.'); ?> ₺</td>
+                                    <td style="padding:7px 6px;text-align:right;font-weight:700;color:<?php echo $net >= 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
+                                        <?php echo number_format($net, 0, ',', '.'); ?> ₺
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <tr>
+                                <td style="padding:10px 6px;font-weight:700;">Toplam</td>
+                                <td style="padding:10px 6px;text-align:right;font-weight:700;"><?php echo number_format($yearly_collected, 0, ',', '.'); ?> ₺</td>
+                                <td style="padding:10px 6px;text-align:right;font-weight:700;"><?php echo number_format($yearly_paid, 0, ',', '.'); ?> ₺</td>
+                                <td style="padding:10px 6px;text-align:right;font-weight:700;color:<?php echo ($yearly_collected - $yearly_paid) >= 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
+                                    <?php echo number_format($yearly_collected - $yearly_paid, 0, ',', '.'); ?> ₺
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">
+                        Kırmızı: devlete ödenecek net KDV (tahsil edilen &gt; ödenen). Yeşil: devreden/iade edilebilir KDV (ödenen &gt; tahsil edilen). Bu, resmi KDV beyannamesinin yerini tutmaz, sadece tahmini bir özet.
+                    </p>
                 </div>
 
                 <?php
