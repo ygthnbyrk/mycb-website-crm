@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($password)) {
         $error = 'Lütfen tüm alanları doldurun.';
     } else {
-        $stmt = $conn->prepare("SELECT id, email, password, name FROM users WHERE email = ?");
+        $stmt = $conn->prepare("SELECT id, email, password, name, role FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_name'] = $user['name'];
+                $_SESSION['user_role'] = $user['role'];
                 
                 $update_stmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 $update_stmt->bind_param("i", $user['id']);

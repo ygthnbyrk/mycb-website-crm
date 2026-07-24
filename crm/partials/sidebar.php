@@ -16,6 +16,10 @@ $nav_items = [
     ['page' => 'bulk-sales-upload',  'href' => 'bulk-sales-upload.php',  'icon' => 'upload',  'label' => 'Toplu Satış Yükle'],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
 ];
+
+if (($_SESSION['user_role'] ?? '') === 'admin') {
+    $nav_items[] = ['page' => 'raporlar', 'href' => 'raporlar.php', 'icon' => 'chart', 'label' => 'Raporlar'];
+}
 ?>
 <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
 <div class="sidebar-overlay" onclick="toggleMenu()"></div>
