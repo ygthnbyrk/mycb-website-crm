@@ -19,6 +19,7 @@ $nav_items = [
 
 if (($_SESSION['user_role'] ?? '') === 'admin') {
     $nav_items[] = ['page' => 'raporlar', 'href' => 'raporlar.php', 'icon' => 'chart', 'label' => 'Raporlar'];
+    $nav_items[] = ['page' => 'parasut', 'href' => 'parasut.php', 'icon' => 'link', 'label' => 'Kârlılık'];
 }
 ?>
 <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>

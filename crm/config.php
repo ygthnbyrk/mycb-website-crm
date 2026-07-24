@@ -9,6 +9,10 @@ define('DB_USER', getenv('DB_USER') ?: 'mycbyigb_crm_user');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_NAME', getenv('DB_NAME') ?: 'mycbyigb_crm_device');
 
+define('PARASUT_CLIENT_ID', getenv('PARASUT_CLIENT_ID') ?: '');
+define('PARASUT_CLIENT_SECRET', getenv('PARASUT_CLIENT_SECRET') ?: '');
+define('PARASUT_REDIRECT_URI', 'urn:ietf:wg:oauth:2.0:oob');
+
 try {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset("utf8mb4");
