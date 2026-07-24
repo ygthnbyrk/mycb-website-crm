@@ -175,6 +175,9 @@ $sim_segments = [];
 foreach ($all_ops as $i => $row) {
     $sim_segments[] = ['label' => $row['operator'], 'value' => (int)$row['qty'], 'color' => $palette[$i % count($palette)]];
 }
+
+$avg_products_month = round($total_products_sold / 12);
+$avg_simcards_month = round($total_simcards_sold / 12);
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -237,11 +240,13 @@ foreach ($all_ops as $i => $row) {
         <div class="detail-card" style="margin-bottom:16px;">
             <h3><?php echo icon('package'); ?> Aylık Satılan Cihaz — <?php echo $selected_year; ?></h3>
             <?php echo svg_month_bars($monthly_products, 260, 'var(--success)', false); ?>
+            <div class="avg-note">Yıl Ortalaması: Aylık <strong><?php echo $avg_products_month; ?> Cihaz</strong></div>
         </div>
 
         <div class="detail-card" style="margin-bottom:16px;">
             <h3><?php echo icon('sim'); ?> Aylık Satılan Sim Kart — <?php echo $selected_year; ?></h3>
             <?php echo svg_month_bars($monthly_simcards, 260, 'var(--warning)', false); ?>
+            <div class="avg-note">Yıl Ortalaması: Aylık <strong><?php echo $avg_simcards_month; ?> Sim Kart</strong></div>
         </div>
 
         <div class="details-grid">

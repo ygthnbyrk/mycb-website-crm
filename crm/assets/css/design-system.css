@@ -276,6 +276,15 @@ svg { width: 1em; height: 1em; vertical-align: -0.125em; flex-shrink: 0; }
 
 /* ---------- Aylik trend cubuk grafigi ---------- */
 .month-chart { width: 100%; height: 260px; display: block; }
+.avg-note {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+}
+.avg-note strong { color: var(--accent); font-weight: 700; }
 
 /* ---------- Donut grafik + legend ---------- */
 .donut-row { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
