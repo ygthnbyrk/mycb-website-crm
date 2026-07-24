@@ -128,7 +128,26 @@
     .detail-card h3 {
         font-size: 16px !important;
     }
-    
+
+    /* Yil sekmeleri */
+    .year-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        padding-bottom: 4px !important;
+    }
+    .year-tab {
+        flex-shrink: 0 !important;
+    }
+
+    /* Donut grafik */
+    .donut-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    .donut-row svg {
+        align-self: center !important;
+    }
+
     /* Tablolar (eğer varsa) */
     table {
         font-size: 12px !important;
