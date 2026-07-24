@@ -119,45 +119,142 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $token_row = parasut_token_row($conn);
 $is_connected = $token_row && !empty($token_row['access_token']);
 
-$sample_invoices = [];
-$sample_error = '';
+function normalize_tr_upper($s) {
+    return mb_strtoupper(trim(preg_replace('/\s+/', ' ', (string)$s)), 'UTF-8');
+}
+
+function parasut_fetch_all_invoices($access_token, $company_id) {
+    $all = [];
+    $included_by_id = [];
+    $page = 1;
+    $per_page = 50;
+    $max_pages = 30;
+    do {
+        $path = '/sales_invoices?page[size]=' . $per_page . '&page[number]=' . $page . '&sort=-issue_date&include=details,details.product';
+        $resp = parasut_api_get($access_token, $company_id, $path);
+        if ($resp['code'] !== 200 || !isset($resp['body']['data'])) {
+            return ['ok' => false, 'error' => 'HTTP ' . $resp['code']];
+        }
+        foreach (($resp['body']['included'] ?? []) as $inc) {
+            $included_by_id[$inc['type'] . ':' . $inc['id']] = $inc;
+        }
+        $batch = $resp['body']['data'];
+        $all = array_merge($all, $batch);
+        $page++;
+    } while (count($batch) === $per_page && $page <= $max_pages);
+    return ['ok' => true, 'invoices' => $all, 'included' => $included_by_id];
+}
+
+$PARASUT_START_YEAR = 2025;
+$parasut_years = range($PARASUT_START_YEAR, (int)date('Y'));
+$p_selected_year = isset($_GET['pyear']) ? (int)$_GET['pyear'] : (int)date('Y');
+if (!in_array($p_selected_year, $parasut_years)) $p_selected_year = end($parasut_years);
+
+$renewal_cost_by_year = [2026 => 540.0];
+
+$fetch_error = '';
+$buckets = [];
+$excluded_total = 0.0;
+$excluded_count = 0;
+$total_revenue = 0.0;
+$total_cost = 0.0;
+$total_cost_known = 0.0;
+
 if ($is_connected && !isset($_POST['action'])) {
     $auth = parasut_get_valid_token($conn);
-    if ($auth) {
-        $resp = parasut_api_get($auth['access_token'], $auth['company_id'], '/sales_invoices?page[size]=10&sort=-issue_date&include=details,details.product');
-        if ($resp['code'] === 200 && isset($resp['body']['data'])) {
-            $sample_invoices = $resp['body']['data'];
-            $included_by_id = [];
-            foreach (($resp['body']['included'] ?? []) as $inc) {
-                $included_by_id[$inc['type'] . ':' . $inc['id']] = $inc;
+    if (!$auth) {
+        $fetch_error = 'Erişim jetonu yenilenemedi, bağlantıyı tekrar kur.';
+    } else {
+        $fetched = parasut_fetch_all_invoices($auth['access_token'], $auth['company_id']);
+        if (!$fetched['ok']) {
+            $fetch_error = 'Fatura verisi çekilemedi (' . htmlspecialchars($fetched['error']) . '). Şirket ID doğru mu kontrol et.';
+        } else {
+            $included_by_id = $fetched['included'];
+
+            $model_costs = [];
+            $mres = $conn->query("SELECT model, AVG(cost_price) avg_cost FROM products WHERE cost_price > 0 GROUP BY model");
+            while ($row = $mres->fetch_assoc()) {
+                $model_costs[normalize_tr_upper($row['model'])] = (float)$row['avg_cost'];
             }
-            $debug_raw_detail = null;
-            foreach ($sample_invoices as &$inv) {
-                $inv['_details'] = [];
+            $model_keys = array_keys($model_costs);
+            usort($model_keys, function ($a, $b) { return mb_strlen($b) - mb_strlen($a); });
+
+            foreach ($fetched['invoices'] as $inv) {
+                $attr = $inv['attributes'] ?? [];
+                $issue_date = $attr['issue_date'] ?? '';
+                if (substr($issue_date, 0, 4) !== (string)$p_selected_year) continue;
+
                 foreach (($inv['relationships']['details']['data'] ?? []) as $ref) {
                     $key = $ref['type'] . ':' . $ref['id'];
-                    if (isset($included_by_id[$key])) {
-                        $detail = $included_by_id[$key];
-                        $product_name = null;
-                        $prod_ref = $detail['relationships']['product']['data'] ?? null;
-                        if ($prod_ref) {
-                            $pkey = $prod_ref['type'] . ':' . $prod_ref['id'];
-                            $product_name = $included_by_id[$pkey]['attributes']['name'] ?? null;
-                        }
-                        $detail['attributes']['_product_name'] = $product_name;
-                        $inv['_details'][] = $detail['attributes'] ?? [];
-                        if ($debug_raw_detail === null) $debug_raw_detail = $detail;
+                    if (!isset($included_by_id[$key])) continue;
+                    $detail = $included_by_id[$key]['attributes'] ?? [];
+                    $prod_ref = $included_by_id[$key]['relationships']['product']['data'] ?? null;
+                    $product_name = null;
+                    if ($prod_ref) {
+                        $pkey = $prod_ref['type'] . ':' . $prod_ref['id'];
+                        $product_name = $included_by_id[$pkey]['attributes']['name'] ?? null;
                     }
+                    $name = $product_name ?: ($detail['description'] ?? '(isimsiz)');
+                    $qty = (float)($detail['quantity'] ?? 0);
+                    $revenue = (float)($detail['net_total'] ?? 0);
+                    $upper = normalize_tr_upper($name);
+
+                    if (mb_strpos($upper, 'FIYAT FARK') !== false || mb_strpos($upper, 'FİYAT FARK') !== false) {
+                        $excluded_total += $revenue;
+                        $excluded_count++;
+                        continue;
+                    }
+
+                    if (mb_strpos($upper, 'YENILEME') !== false || mb_strpos($upper, 'YENİLEME') !== false) {
+                        $bkey = 'renewal';
+                        $has_cost = isset($renewal_cost_by_year[$p_selected_year]);
+                        if (!isset($buckets[$bkey])) $buckets[$bkey] = ['group' => 'renewal', 'label' => 'Sim Kart Yenilemeleri', 'qty' => 0, 'revenue' => 0, 'cost' => 0, 'has_cost' => $has_cost];
+                        $buckets[$bkey]['qty'] += $qty;
+                        $buckets[$bkey]['revenue'] += $revenue;
+                        if ($has_cost) $buckets[$bkey]['cost'] += $qty * $renewal_cost_by_year[$p_selected_year];
+                        continue;
+                    }
+
+                    if (mb_strpos($upper, 'SIM KART') !== false || mb_strpos($upper, 'SİM KART') !== false) {
+                        $bkey = 'simcard:' . $upper;
+                        if (!isset($buckets[$bkey])) $buckets[$bkey] = ['group' => 'simcard', 'label' => $name, 'qty' => 0, 'revenue' => 0, 'cost' => 0, 'has_cost' => false];
+                        $buckets[$bkey]['qty'] += $qty;
+                        $buckets[$bkey]['revenue'] += $revenue;
+                        continue;
+                    }
+
+                    $matched_model = null;
+                    foreach ($model_keys as $mk) {
+                        if (mb_strpos($upper, $mk) !== false) { $matched_model = $mk; break; }
+                    }
+                    if ($matched_model) {
+                        $bkey = 'device:' . $matched_model;
+                        if (!isset($buckets[$bkey])) $buckets[$bkey] = ['group' => 'device', 'label' => $name, 'qty' => 0, 'revenue' => 0, 'cost' => 0, 'has_cost' => true];
+                        $buckets[$bkey]['qty'] += $qty;
+                        $buckets[$bkey]['revenue'] += $revenue;
+                        $buckets[$bkey]['cost'] += $qty * $model_costs[$matched_model];
+                        continue;
+                    }
+
+                    $bkey = 'other:' . $upper;
+                    if (!isset($buckets[$bkey])) $buckets[$bkey] = ['group' => 'other', 'label' => $name, 'qty' => 0, 'revenue' => 0, 'cost' => 0, 'has_cost' => false];
+                    $buckets[$bkey]['qty'] += $qty;
+                    $buckets[$bkey]['revenue'] += $revenue;
                 }
             }
-            unset($inv);
-        } else {
-            $sample_error = 'Fatura verisi çekilemedi (HTTP ' . $resp['code'] . '). Şirket ID doğru mu kontrol et.';
+
+            foreach ($buckets as $b) {
+                $total_revenue += $b['revenue'];
+                if ($b['has_cost']) {
+                    $total_cost += $b['cost'];
+                    $total_cost_known += $b['revenue'];
+                }
+            }
+            uasort($buckets, function ($a, $b) { return $b['revenue'] <=> $a['revenue']; });
         }
-    } else {
-        $sample_error = 'Erişim jetonu yenilenemedi, bağlantıyı tekrar kur.';
     }
 }
+$total_profit = $total_cost_known - $total_cost;
 
 $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencode(PARASUT_CLIENT_ID) . '&redirect_uri=' . urlencode(PARASUT_REDIRECT_URI) . '&response_type=code';
 ?>
@@ -221,42 +318,75 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                 </form>
             </div>
 
-            <div class="detail-card">
-                <h3><?php echo icon('list'); ?> Son Faturalar (Ham Veri Önizleme)</h3>
-                <?php if ($sample_error): ?>
-                    <div class="alert alert-error"><?php echo htmlspecialchars($sample_error); ?></div>
-                <?php elseif (empty($sample_invoices)): ?>
-                    <div class="no-data">Fatura bulunamadı</div>
-                <?php else: ?>
-                    <?php foreach ($sample_invoices as $inv):
-                        $attr = $inv['attributes'] ?? [];
-                    ?>
-                        <div class="trend-row">
-                            <div class="trend-row-head">
-                                <span><?php echo htmlspecialchars($attr['item_type'] ?? '') . ' · ' . htmlspecialchars($attr['issue_date'] ?? ''); ?></span>
-                                <span><?php echo number_format((float)($attr['net_total'] ?? 0), 2, ',', '.'); ?> <?php echo htmlspecialchars($attr['currency'] ?? 'TRY'); ?></span>
-                            </div>
-                            <?php if (!empty($inv['_details'])): ?>
-                                <div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--bg-hover);">
-                                    <?php foreach ($inv['_details'] as $d): ?>
-                                        <div style="font-size:12.5px;color:var(--text-muted);padding:3px 0;">
-                                            <?php echo htmlspecialchars($d['_product_name'] ?? $d['description'] ?? '(ürün/açıklama yok)'); ?>
-                                            — <?php echo htmlspecialchars($d['quantity'] ?? '?'); ?> adet ×
-                                            <?php echo number_format((float)($d['unit_price'] ?? 0), 2, ',', '.'); ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+            <div class="year-tabs">
+                <?php foreach ($parasut_years as $y): ?>
+                    <a href="parasut.php?pyear=<?php echo $y; ?>" class="year-tab<?php echo $y === $p_selected_year ? ' active' : ''; ?>"><?php echo $y; ?></a>
+                <?php endforeach; ?>
             </div>
 
-            <?php if (!empty($debug_raw_detail)): ?>
-            <div class="detail-card" style="margin-top:16px;">
-                <h3>Geçici Debug — Ham Kalem Verisi</h3>
-                <pre style="font-size:11.5px;white-space:pre-wrap;color:var(--text-muted);"><?php echo htmlspecialchars(json_encode($debug_raw_detail, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
-            </div>
+            <?php if ($fetch_error): ?>
+                <div class="alert alert-error"><?php echo $fetch_error; ?></div>
+            <?php else: ?>
+                <div class="stats-grid">
+                    <div class="stat-card blue">
+                        <div class="icon"><?php echo icon('dollar'); ?></div>
+                        <h3>Paraşüt Cirosu</h3>
+                        <div class="number"><?php echo number_format($total_revenue, 0, ',', '.'); ?> ₺</div>
+                        <small><?php echo $p_selected_year; ?> toplamı</small>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="icon"><?php echo icon('package'); ?></div>
+                        <h3>Tahmini Maliyet</h3>
+                        <div class="number"><?php echo number_format($total_cost, 0, ',', '.'); ?> ₺</div>
+                        <small>Sadece maliyeti bilinen kalemler</small>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="icon"><?php echo icon('chart'); ?></div>
+                        <h3>Tahmini Kâr</h3>
+                        <div class="number"><?php echo number_format($total_profit, 0, ',', '.'); ?> ₺</div>
+                        <small><?php echo $total_cost_known > 0 ? '%' . round(($total_profit / $total_cost_known) * 100) . ' marj' : '—'; ?></small>
+                    </div>
+                </div>
+
+                <?php
+                $groups = [
+                    'device' => ['title' => 'Cihaz Satışları (kâr hesaplı)', 'icon' => 'package'],
+                    'renewal' => ['title' => 'Sim Kart Yenilemeleri', 'icon' => 'refresh'],
+                    'simcard' => ['title' => 'Yeni Sim Kart Satışları (maliyet girilmedi)', 'icon' => 'sim'],
+                    'other' => ['title' => 'Eşleşmeyen/Diğer Kalemler', 'icon' => 'list'],
+                ];
+                ?>
+                <?php foreach ($groups as $gkey => $ginfo):
+                    $rows = array_filter($buckets, function ($b) use ($gkey) { return $b['group'] === $gkey; });
+                    if (empty($rows)) continue;
+                ?>
+                    <div class="detail-card" style="margin-bottom:16px;">
+                        <h3><?php echo icon($ginfo['icon']); ?> <?php echo $ginfo['title']; ?></h3>
+                        <?php foreach ($rows as $b): ?>
+                            <div class="detail-item">
+                                <span><?php echo htmlspecialchars($b['label']); ?> · <?php echo (int)$b['qty']; ?> adet</span>
+                                <span>
+                                    <?php echo number_format($b['revenue'], 0, ',', '.'); ?> ₺
+                                    <?php if ($b['has_cost']): ?>
+                                        <span style="color:var(--text-muted);font-weight:500;"> (kâr: <?php echo number_format($b['revenue'] - $b['cost'], 0, ',', '.'); ?> ₺)</span>
+                                    <?php else: ?>
+                                        <span style="color:var(--text-muted);font-weight:500;"> (maliyet yok)</span>
+                                    <?php endif; ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endforeach; ?>
+
+                <?php if ($excluded_count > 0): ?>
+                    <p style="font-size:12.5px;color:var(--text-muted);">
+                        Not: "Fiyat Farkı" türü <?php echo $excluded_count; ?> kalem (<?php echo number_format($excluded_total, 0, ',', '.'); ?> ₺) hesaba katılmadı.
+                    </p>
+                <?php endif; ?>
+
+                <?php if (empty($buckets) && $excluded_count === 0): ?>
+                    <div class="no-data"><?php echo $p_selected_year; ?> yılı için fatura bulunamadı</div>
+                <?php endif; ?>
             <?php endif; ?>
         <?php endif; ?>
     </div>
