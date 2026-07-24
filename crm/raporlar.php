@@ -14,7 +14,7 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
 $user_name = $_SESSION['user_name'];
 $palette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--purple)', 'var(--info)', 'var(--danger)'];
 
-function svg_month_bars($months, $height = 260) {
+function svg_month_bars($months, $height = 260, $color = 'var(--accent)', $currency = true) {
     $n = count($months);
     $unit = 64;
     $w = $n * $unit;
@@ -32,9 +32,13 @@ function svg_month_bars($months, $height = 260) {
         if ($m['value'] > 0) $h = max($h, 3);
         $y = $top_pad + ($chart_h - $h);
         $label_val = $m['value'] >= 1000 ? round($m['value'] / 1000, 1) . 'K' : number_format($m['value'], 0, ',', '.');
-        $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' ₺ · ' . $m['count'] . ' satış · ' . $m['cust_count'] . ' müşteri';
+        if ($currency) {
+            $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' ₺ · ' . ($m['count'] ?? 0) . ' satış · ' . ($m['cust_count'] ?? 0) . ' müşteri';
+        } else {
+            $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' adet';
+        }
         $svg .= '<g>';
-        $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $bar_w . '" height="' . $h . '" rx="5" fill="var(--accent)"><title>' . $title . '</title></rect>';
+        $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $bar_w . '" height="' . $h . '" rx="5" fill="' . $color . '"><title>' . $title . '</title></rect>';
         if ($m['value'] > 0) {
             $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($y - 8) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary)">' . $label_val . '</text>';
         }
@@ -116,6 +120,32 @@ while ($row = $tres->fetch_assoc()) {
     $monthly[(int)$row['m']]['value'] = (float)$row['revenue'];
     $monthly[(int)$row['m']]['count'] = (int)$row['cnt'];
     $monthly[(int)$row['m']]['cust_count'] = (int)$row['cust_cnt'];
+}
+
+// Aylik satilan cihaz sayisi
+$monthly_products = [];
+for ($m = 1; $m <= 12; $m++) {
+    $monthly_products[$m] = ['label' => $ay_kisa[$m - 1], 'value' => 0];
+}
+$pmstmt = $conn->prepare("SELECT MONTH(s.sale_date) as m, COUNT(*) as qty FROM sale_products sp INNER JOIN sales s ON sp.sale_id = s.id WHERE YEAR(s.sale_date) = ? GROUP BY m");
+$pmstmt->bind_param("i", $selected_year);
+$pmstmt->execute();
+$pmres = $pmstmt->get_result();
+while ($row = $pmres->fetch_assoc()) {
+    $monthly_products[(int)$row['m']]['value'] = (int)$row['qty'];
+}
+
+// Aylik satilan sim kart sayisi
+$monthly_simcards = [];
+for ($m = 1; $m <= 12; $m++) {
+    $monthly_simcards[$m] = ['label' => $ay_kisa[$m - 1], 'value' => 0];
+}
+$smstmt = $conn->prepare("SELECT MONTH(s.sale_date) as m, COUNT(*) as qty FROM sale_simcards ss INNER JOIN sales s ON ss.sale_id = s.id WHERE YEAR(s.sale_date) = ? GROUP BY m");
+$smstmt->bind_param("i", $selected_year);
+$smstmt->execute();
+$smres = $smstmt->get_result();
+while ($row = $smres->fetch_assoc()) {
+    $monthly_simcards[(int)$row['m']]['value'] = (int)$row['qty'];
 }
 
 // En cok satan modeller (secili yil, top 6 + diger)
@@ -202,6 +232,16 @@ foreach ($all_ops as $i => $row) {
         <div class="detail-card" style="margin-bottom:16px;">
             <h3><?php echo icon('chart'); ?> Aylık Satış Trendi — <?php echo $selected_year; ?></h3>
             <?php echo svg_month_bars($monthly); ?>
+        </div>
+
+        <div class="detail-card" style="margin-bottom:16px;">
+            <h3><?php echo icon('package'); ?> Aylık Satılan Cihaz — <?php echo $selected_year; ?></h3>
+            <?php echo svg_month_bars($monthly_products, 260, 'var(--success)', false); ?>
+        </div>
+
+        <div class="detail-card" style="margin-bottom:16px;">
+            <h3><?php echo icon('sim'); ?> Aylık Satılan Sim Kart — <?php echo $selected_year; ?></h3>
+            <?php echo svg_month_bars($monthly_simcards, 260, 'var(--warning)', false); ?>
         </div>
 
         <div class="details-grid">
