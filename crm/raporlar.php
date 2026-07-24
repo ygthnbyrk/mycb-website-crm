@@ -14,25 +14,35 @@ if (($_SESSION['user_role'] ?? '') !== 'admin') {
 $user_name = $_SESSION['user_name'];
 $palette = ['var(--accent)', 'var(--success)', 'var(--warning)', 'var(--purple)', 'var(--info)', 'var(--danger)'];
 
-function svg_month_bars($months, $height = 220) {
+function svg_month_bars($months, $height = 260) {
     $n = count($months);
-    $unit = 56;
+    $unit = 64;
     $w = $n * $unit;
-    $chart_h = $height - 30;
+    $top_pad = 30;
+    $bottom_pad = 28;
+    $chart_h = $height - $top_pad - $bottom_pad;
     $max = 0;
     foreach ($months as $m) $max = max($max, $m['value']);
     if ($max <= 0) $max = 1;
-    $bar_w = $unit * 0.5;
-    $svg = '<svg viewBox="0 0 ' . $w . ' ' . $height . '" width="100%" height="' . $height . '" preserveAspectRatio="xMidYMid meet">';
+    $bar_w = $unit * 0.52;
+    $svg = '<svg class="month-chart" viewBox="0 0 ' . $w . ' ' . $height . '" preserveAspectRatio="xMidYMid meet">';
     foreach ($months as $i => $m) {
         $x = $i * $unit + ($unit - $bar_w) / 2;
         $h = round(($m['value'] / $max) * $chart_h);
         if ($m['value'] > 0) $h = max($h, 3);
-        $y = $chart_h - $h;
-        $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' ₺ (' . $m['count'] . ' satış)';
-        $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $bar_w . '" height="' . $h . '" rx="4" fill="var(--accent)"><title>' . $title . '</title></rect>';
-        $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($height - 8) . '" text-anchor="middle" font-size="11" fill="var(--text-muted)">' . htmlspecialchars($m['label']) . '</text>';
+        $y = $top_pad + ($chart_h - $h);
+        $label_val = $m['value'] >= 1000 ? round($m['value'] / 1000, 1) . 'K' : number_format($m['value'], 0, ',', '.');
+        $title = htmlspecialchars($m['label']) . ': ' . number_format($m['value'], 0, ',', '.') . ' ₺ · ' . $m['count'] . ' satış · ' . $m['cust_count'] . ' müşteri';
+        $svg .= '<g>';
+        $svg .= '<rect x="' . $x . '" y="' . $y . '" width="' . $bar_w . '" height="' . $h . '" rx="5" fill="var(--accent)"><title>' . $title . '</title></rect>';
+        if ($m['value'] > 0) {
+            $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($y - 8) . '" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--text-primary)">' . $label_val . '</text>';
+        }
+        $svg .= '<text x="' . ($x + $bar_w / 2) . '" y="' . ($height - 8) . '" text-anchor="middle" font-size="12" fill="var(--text-muted)">' . htmlspecialchars($m['label']) . '</text>';
+        $svg .= '</g>';
     }
+    $baseline = $top_pad + $chart_h;
+    $svg .= '<line x1="0" y1="' . $baseline . '" x2="' . $w . '" y2="' . $baseline . '" stroke="var(--border)" stroke-width="1"/>';
     $svg .= '</svg>';
     return $svg;
 }
@@ -44,7 +54,7 @@ function svg_donut($segments, $size = 160, $stroke = 24) {
     $circumference = 2 * M_PI * $r;
     $total = 0;
     foreach ($segments as $s) $total += $s['value'];
-    $svg = '<svg width="' . $size . '" height="' . $size . '" viewBox="0 0 ' . $size . ' ' . $size . '">';
+    $svg = '<svg class="donut-chart" viewBox="0 0 ' . $size . ' ' . $size . '">';
     if ($total <= 0) {
         $svg .= '<circle cx="' . $cx . '" cy="' . $cy . '" r="' . $r . '" fill="none" stroke="var(--bg-hover)" stroke-width="' . $stroke . '"/>';
     } else {
@@ -77,7 +87,7 @@ $selected_year = isset($_GET['year']) ? (int)$_GET['year'] : (in_array($current_
 if (!in_array($selected_year, $years)) $selected_year = end($years);
 
 // KPI (secili yil)
-$kpi_stmt = $conn->prepare("SELECT COUNT(*) as sale_count, SUM(total) as revenue FROM sales WHERE YEAR(sale_date) = ?");
+$kpi_stmt = $conn->prepare("SELECT COUNT(*) as sale_count, SUM(total) as revenue, COUNT(DISTINCT customer_id) as customer_count FROM sales WHERE YEAR(sale_date) = ?");
 $kpi_stmt->bind_param("i", $selected_year);
 $kpi_stmt->execute();
 $kpi = $kpi_stmt->get_result()->fetch_assoc();
@@ -96,15 +106,16 @@ $total_simcards_sold = $sim_stmt->get_result()->fetch_assoc()['c'];
 $ay_kisa = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 $monthly = [];
 for ($m = 1; $m <= 12; $m++) {
-    $monthly[$m] = ['label' => $ay_kisa[$m - 1], 'value' => 0.0, 'count' => 0];
+    $monthly[$m] = ['label' => $ay_kisa[$m - 1], 'value' => 0.0, 'count' => 0, 'cust_count' => 0];
 }
-$tstmt = $conn->prepare("SELECT MONTH(sale_date) as m, SUM(total) as revenue, COUNT(*) as cnt FROM sales WHERE YEAR(sale_date) = ? GROUP BY m");
+$tstmt = $conn->prepare("SELECT MONTH(sale_date) as m, SUM(total) as revenue, COUNT(*) as cnt, COUNT(DISTINCT customer_id) as cust_cnt FROM sales WHERE YEAR(sale_date) = ? GROUP BY m");
 $tstmt->bind_param("i", $selected_year);
 $tstmt->execute();
 $tres = $tstmt->get_result();
 while ($row = $tres->fetch_assoc()) {
     $monthly[(int)$row['m']]['value'] = (float)$row['revenue'];
     $monthly[(int)$row['m']]['count'] = (int)$row['cnt'];
+    $monthly[(int)$row['m']]['cust_count'] = (int)$row['cust_cnt'];
 }
 
 // En cok satan modeller (secili yil, top 6 + diger)
@@ -179,6 +190,12 @@ foreach ($all_ops as $i => $row) {
                 <h3>Satılan Sim Kart</h3>
                 <div class="number"><?php echo (int)$total_simcards_sold; ?></div>
                 <small><?php echo $selected_year; ?> toplamı</small>
+            </div>
+            <div class="stat-card purple">
+                <div class="icon"><?php echo icon('users'); ?></div>
+                <h3>Farklı Müşteri</h3>
+                <div class="number"><?php echo (int)$kpi['customer_count']; ?></div>
+                <small><?php echo $selected_year; ?> içinde satış yapılan</small>
             </div>
         </div>
 

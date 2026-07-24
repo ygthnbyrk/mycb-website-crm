@@ -274,9 +274,12 @@ svg { width: 1em; height: 1em; vertical-align: -0.125em; flex-shrink: 0; }
 .year-tab:hover { border-color: var(--accent); color: var(--accent); }
 .year-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* ---------- Aylik trend cubuk grafigi ---------- */
+.month-chart { width: 100%; height: 260px; display: block; }
+
 /* ---------- Donut grafik + legend ---------- */
 .donut-row { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.donut-row svg { flex-shrink: 0; }
+.donut-chart { width: 160px; height: 160px; flex-shrink: 0; display: block; }
 .donut-legend { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 9px; }
 .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
