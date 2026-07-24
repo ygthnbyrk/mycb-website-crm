@@ -385,6 +385,45 @@ if ($is_connected) {
 $cached_buckets = $cache_row ? json_decode($cache_row['buckets_json'], true) : [];
 $cached_monthly = $cache_row && !empty($cache_row['monthly_json']) ? json_decode($cache_row['monthly_json'], true) : [];
 
+// KDV devreden hesaplamasi icin PARASUT_START_YEAR'dan secili yila kadar tum aylari kronolojik sirayla topla
+$kdv_timeline = [];
+$kdv_missing_years = [];
+if ($is_connected) {
+    foreach ($parasut_years as $y) {
+        if ($y > $p_selected_year) break;
+        if ($y === $p_selected_year) {
+            $y_monthly = $cached_monthly;
+            $y_synced = (bool)$cache_row;
+        } else {
+            $ystmt = $conn->prepare("SELECT monthly_json FROM parasut_cache WHERE year = ?");
+            $ystmt->bind_param("i", $y);
+            $ystmt->execute();
+            $yres = $ystmt->get_result();
+            $yrow = $yres->num_rows ? $yres->fetch_assoc() : null;
+            $y_monthly = $yrow && !empty($yrow['monthly_json']) ? json_decode($yrow['monthly_json'], true) : [];
+            $y_synced = (bool)$yrow;
+        }
+        if (!$y_synced) $kdv_missing_years[] = $y;
+        for ($m = 1; $m <= 12; $m++) {
+            $kdv_timeline[] = [
+                'year' => $y,
+                'month' => $m,
+                'collected' => (float)($y_monthly[$m]['vat_collected'] ?? 0),
+                'paid' => (float)($y_monthly[$m]['vat_paid'] ?? 0),
+            ];
+        }
+    }
+    $devir = 0.0;
+    foreach ($kdv_timeline as &$row) {
+        $row['devir_in'] = $devir;
+        $net = $row['collected'] - $row['paid'] - $devir;
+        $row['net'] = $net;
+        $devir = $net < 0 ? -$net : 0.0;
+    }
+    unset($row);
+}
+$kdv_display_rows = array_filter($kdv_timeline, function ($r) use ($p_selected_year) { return $r['year'] === $p_selected_year; });
+
 function svg_month_bars($months, $height = 260, $color = 'var(--accent)') {
     $n = count($months);
     $unit = 64;
@@ -534,13 +573,19 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
 
                 <div class="detail-card" style="margin-bottom:16px;">
                     <h3><?php echo icon('dollar'); ?> KDV Özeti — <?php echo $p_selected_year; ?></h3>
+                    <?php if (!empty($kdv_missing_years)): ?>
+                        <div class="alert alert-warning" style="margin-bottom:14px;">
+                            Şu yıllar hiç senkronize edilmemiş: <?php echo implode(', ', $kdv_missing_years); ?>. Devreden KDV bu yıllar için 0 kabul edildi, gerçek devir farklı olabilir — doğru sonuç için önce o yılları senkronize et.
+                        </div>
+                    <?php endif; ?>
                     <div style="overflow-x:auto;">
                     <table style="width:100%;border-collapse:collapse;font-size:13px;">
                         <thead>
                             <tr style="border-bottom:1px solid var(--border);text-align:left;color:var(--text-muted);">
                                 <th style="padding:8px 6px;">Ay</th>
-                                <th style="padding:8px 6px;text-align:right;">KDV Tahsil Edilen</th>
-                                <th style="padding:8px 6px;text-align:right;">KDV Ödenen</th>
+                                <th style="padding:8px 6px;text-align:right;">Tahsil Edilen</th>
+                                <th style="padding:8px 6px;text-align:right;">Ödenen</th>
+                                <th style="padding:8px 6px;text-align:right;">Devreden (gelen)</th>
                                 <th style="padding:8px 6px;text-align:right;">Net KDV</th>
                             </tr>
                         </thead>
@@ -548,36 +593,33 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                             <?php
                             $yearly_collected = 0.0;
                             $yearly_paid = 0.0;
-                            foreach ($ay_kisa_p as $i => $label):
-                                $mnum = $i + 1;
-                                $collected = (float)($cached_monthly[$mnum]['vat_collected'] ?? 0);
-                                $paid = (float)($cached_monthly[$mnum]['vat_paid'] ?? 0);
-                                $net = $collected - $paid;
-                                $yearly_collected += $collected;
-                                $yearly_paid += $paid;
+                            foreach ($kdv_display_rows as $row):
+                                $label = $ay_kisa_p[$row['month'] - 1];
+                                $yearly_collected += $row['collected'];
+                                $yearly_paid += $row['paid'];
                             ?>
                                 <tr style="border-bottom:1px solid var(--bg-hover);">
                                     <td style="padding:7px 6px;color:var(--text-secondary);"><?php echo $label; ?></td>
-                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($collected, 0, ',', '.'); ?> ₺</td>
-                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($paid, 0, ',', '.'); ?> ₺</td>
-                                    <td style="padding:7px 6px;text-align:right;font-weight:700;color:<?php echo $net >= 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
-                                        <?php echo number_format($net, 0, ',', '.'); ?> ₺
+                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($row['collected'], 0, ',', '.'); ?> ₺</td>
+                                    <td style="padding:7px 6px;text-align:right;"><?php echo number_format($row['paid'], 0, ',', '.'); ?> ₺</td>
+                                    <td style="padding:7px 6px;text-align:right;color:var(--text-muted);"><?php echo number_format($row['devir_in'], 0, ',', '.'); ?> ₺</td>
+                                    <td style="padding:7px 6px;text-align:right;font-weight:700;color:<?php echo $row['net'] >= 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
+                                        <?php echo number_format($row['net'], 0, ',', '.'); ?> ₺
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                             <tr>
-                                <td style="padding:10px 6px;font-weight:700;">Toplam</td>
+                                <td style="padding:10px 6px;font-weight:700;">Toplam (<?php echo $p_selected_year; ?>)</td>
                                 <td style="padding:10px 6px;text-align:right;font-weight:700;"><?php echo number_format($yearly_collected, 0, ',', '.'); ?> ₺</td>
                                 <td style="padding:10px 6px;text-align:right;font-weight:700;"><?php echo number_format($yearly_paid, 0, ',', '.'); ?> ₺</td>
-                                <td style="padding:10px 6px;text-align:right;font-weight:700;color:<?php echo ($yearly_collected - $yearly_paid) >= 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
-                                    <?php echo number_format($yearly_collected - $yearly_paid, 0, ',', '.'); ?> ₺
-                                </td>
+                                <td></td>
+                                <td></td>
                             </tr>
                         </tbody>
                     </table>
                     </div>
                     <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">
-                        Kırmızı: devlete ödenecek net KDV (tahsil edilen &gt; ödenen). Yeşil: devreden/iade edilebilir KDV (ödenen &gt; tahsil edilen). Bu, resmi KDV beyannamesinin yerini tutmaz, sadece tahmini bir özet.
+                        "Net KDV" = Tahsil Edilen − Ödenen − o aya devreden KDV. Kırmızı: o ay devlete ödenecek tutar. Yeşil: sonraki aya devreden KDV alacağı (mutlak değeri bir sonraki ayın "Devreden" kolonunda görünür). Hesap 2025'ten itibaren zincirleme yapılıyor. Bu, resmi KDV beyannamesinin yerini tutmaz, tahmini bir özet.
                     </p>
                 </div>
 
