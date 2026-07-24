@@ -127,13 +127,18 @@ function parasut_fetch_all_invoices($access_token, $company_id) {
     $all = [];
     $included_by_id = [];
     $page = 1;
-    $per_page = 50;
+    $per_page = 25;
     $max_pages = 30;
     do {
         $path = '/sales_invoices?page[size]=' . $per_page . '&page[number]=' . $page . '&sort=-issue_date&include=details,details.product';
         $resp = parasut_api_get($access_token, $company_id, $path);
         if ($resp['code'] !== 200 || !isset($resp['body']['data'])) {
-            return ['ok' => false, 'error' => 'HTTP ' . $resp['code']];
+            $detail = '';
+            if (isset($resp['body']['errors'][0])) {
+                $e0 = $resp['body']['errors'][0];
+                $detail = ($e0['title'] ?? '') . ': ' . ($e0['detail'] ?? '');
+            }
+            return ['ok' => false, 'error' => 'HTTP ' . $resp['code'] . ($detail ? ' — ' . $detail : '')];
         }
         foreach (($resp['body']['included'] ?? []) as $inc) {
             $included_by_id[$inc['type'] . ':' . $inc['id']] = $inc;
