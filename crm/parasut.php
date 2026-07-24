@@ -127,6 +127,20 @@ if ($is_connected && !isset($_POST['action'])) {
         $resp = parasut_api_get($auth['access_token'], $auth['company_id'], '/sales_invoices?page[size]=10&sort=-issue_date&include=details');
         if ($resp['code'] === 200 && isset($resp['body']['data'])) {
             $sample_invoices = $resp['body']['data'];
+            $included_by_id = [];
+            foreach (($resp['body']['included'] ?? []) as $inc) {
+                $included_by_id[$inc['type'] . ':' . $inc['id']] = $inc;
+            }
+            foreach ($sample_invoices as &$inv) {
+                $inv['_details'] = [];
+                foreach (($inv['relationships']['details']['data'] ?? []) as $ref) {
+                    $key = $ref['type'] . ':' . $ref['id'];
+                    if (isset($included_by_id[$key])) {
+                        $inv['_details'][] = $included_by_id[$key]['attributes'] ?? [];
+                    }
+                }
+            }
+            unset($inv);
         } else {
             $sample_error = 'Fatura verisi çekilemedi (HTTP ' . $resp['code'] . '). Şirket ID doğru mu kontrol et.';
         }
@@ -207,9 +221,22 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                     <?php foreach ($sample_invoices as $inv):
                         $attr = $inv['attributes'] ?? [];
                     ?>
-                        <div class="detail-item">
-                            <span><?php echo htmlspecialchars($attr['item_type'] ?? '') . ' · ' . htmlspecialchars($attr['issue_date'] ?? ''); ?></span>
-                            <span><?php echo number_format((float)($attr['net_total'] ?? 0), 2, ',', '.'); ?> <?php echo htmlspecialchars($attr['currency'] ?? 'TRY'); ?></span>
+                        <div class="trend-row">
+                            <div class="trend-row-head">
+                                <span><?php echo htmlspecialchars($attr['item_type'] ?? '') . ' · ' . htmlspecialchars($attr['issue_date'] ?? ''); ?></span>
+                                <span><?php echo number_format((float)($attr['net_total'] ?? 0), 2, ',', '.'); ?> <?php echo htmlspecialchars($attr['currency'] ?? 'TRY'); ?></span>
+                            </div>
+                            <?php if (!empty($inv['_details'])): ?>
+                                <div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--bg-hover);">
+                                    <?php foreach ($inv['_details'] as $d): ?>
+                                        <div style="font-size:12.5px;color:var(--text-muted);padding:3px 0;">
+                                            <?php echo htmlspecialchars($d['description'] ?? '(açıklama yok)'); ?>
+                                            — <?php echo htmlspecialchars($d['quantity'] ?? '?'); ?> adet ×
+                                            <?php echo number_format((float)($d['unit_price'] ?? 0), 2, ',', '.'); ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
