@@ -124,19 +124,29 @@ $sample_error = '';
 if ($is_connected && !isset($_POST['action'])) {
     $auth = parasut_get_valid_token($conn);
     if ($auth) {
-        $resp = parasut_api_get($auth['access_token'], $auth['company_id'], '/sales_invoices?page[size]=10&sort=-issue_date&include=details');
+        $resp = parasut_api_get($auth['access_token'], $auth['company_id'], '/sales_invoices?page[size]=10&sort=-issue_date&include=details,details.product');
         if ($resp['code'] === 200 && isset($resp['body']['data'])) {
             $sample_invoices = $resp['body']['data'];
             $included_by_id = [];
             foreach (($resp['body']['included'] ?? []) as $inc) {
                 $included_by_id[$inc['type'] . ':' . $inc['id']] = $inc;
             }
+            $debug_raw_detail = null;
             foreach ($sample_invoices as &$inv) {
                 $inv['_details'] = [];
                 foreach (($inv['relationships']['details']['data'] ?? []) as $ref) {
                     $key = $ref['type'] . ':' . $ref['id'];
                     if (isset($included_by_id[$key])) {
-                        $inv['_details'][] = $included_by_id[$key]['attributes'] ?? [];
+                        $detail = $included_by_id[$key];
+                        $product_name = null;
+                        $prod_ref = $detail['relationships']['product']['data'] ?? null;
+                        if ($prod_ref) {
+                            $pkey = $prod_ref['type'] . ':' . $prod_ref['id'];
+                            $product_name = $included_by_id[$pkey]['attributes']['name'] ?? null;
+                        }
+                        $detail['attributes']['_product_name'] = $product_name;
+                        $inv['_details'][] = $detail['attributes'] ?? [];
+                        if ($debug_raw_detail === null) $debug_raw_detail = $detail;
                     }
                 }
             }
@@ -230,7 +240,7 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                                 <div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--bg-hover);">
                                     <?php foreach ($inv['_details'] as $d): ?>
                                         <div style="font-size:12.5px;color:var(--text-muted);padding:3px 0;">
-                                            <?php echo htmlspecialchars($d['description'] ?? '(açıklama yok)'); ?>
+                                            <?php echo htmlspecialchars($d['_product_name'] ?? $d['description'] ?? '(ürün/açıklama yok)'); ?>
                                             — <?php echo htmlspecialchars($d['quantity'] ?? '?'); ?> adet ×
                                             <?php echo number_format((float)($d['unit_price'] ?? 0), 2, ',', '.'); ?>
                                         </div>
@@ -241,6 +251,13 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+
+            <?php if (!empty($debug_raw_detail)): ?>
+            <div class="detail-card" style="margin-top:16px;">
+                <h3>Geçici Debug — Ham Kalem Verisi</h3>
+                <pre style="font-size:11.5px;white-space:pre-wrap;color:var(--text-muted);"><?php echo htmlspecialchars(json_encode($debug_raw_detail, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)); ?></pre>
+            </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </body>
