@@ -29,7 +29,7 @@ while ($c = $res->fetch_assoc()) {
         continue;
     }
     $tax = trim($c['tax_number']);
-    $name = strtoupper(trim($c['name']));
+    $name = mb_strtoupper(trim(preg_replace('/\s+/', ' ', $c['name'])), 'UTF-8');
     $entry = null;
     if ($tax && isset($by_tax[$tax])) {
         $entry = $by_tax[$tax];
