@@ -128,12 +128,27 @@ function claude_ocr_device_and_sim($photo_bytes_list) {
     }
 
     $decoded = json_decode($raw, true);
-    if ($decoded === null || empty($decoded['content'][0]['text'])) {
+    if ($decoded === null || empty($decoded['content'])) {
         $result['error'] = 'Claude yanıtı beklenmeyen formatta.';
         return $result;
     }
 
-    $parsed = json_decode($decoded['content'][0]['text'], true);
+    // content[0] her zaman metin bloğu olmayabilir (adaptive thinking önce bir
+    // "thinking" bloğu döndürebilir) - metin bloğunu tipine göre bul.
+    $text_block = null;
+    foreach ($decoded['content'] as $block) {
+        if (($block['type'] ?? '') === 'text' && !empty($block['text'])) {
+            $text_block = $block['text'];
+            break;
+        }
+    }
+
+    if ($text_block === null) {
+        $result['error'] = 'Claude yanıtında metin bloğu bulunamadı (stop_reason: ' . ($decoded['stop_reason'] ?? '?') . ').';
+        return $result;
+    }
+
+    $parsed = json_decode($text_block, true);
     if ($parsed === null) {
         $result['error'] = 'Claude JSON çıktısı parse edilemedi.';
         return $result;
