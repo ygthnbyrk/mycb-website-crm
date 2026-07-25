@@ -98,6 +98,16 @@ $stmt->close();
                             </ul>
                         </details>
                     <?php endif; ?>
+                    <?php if (!empty($sr['conflicts'])): ?>
+                        <details style="margin-top:8px;">
+                            <summary style="cursor:pointer;color:var(--warning);"><?php echo count($sr['conflicts']); ?> çakışma - vergi no başka bir müşteride zaten kayıtlı, elle kontrol et (görmek için tıkla)</summary>
+                            <ul style="margin-top:8px;max-height:240px;overflow-y:auto;">
+                                <?php foreach ($sr['conflicts'] as $u): ?>
+                                    <li><?php echo htmlspecialchars($u['name']); ?> — <?php echo htmlspecialchars($u['tax_number']); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </details>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>

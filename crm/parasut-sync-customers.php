@@ -83,6 +83,7 @@ while ($row = $res->fetch_assoc()) {
 $updated_count = 0;
 $already_ok_count = 0;
 $unmatched = [];
+$conflicts = [];
 
 foreach ($contacts as $attrs) {
     // Sadece gerçek müşteriler - tedarikçileri (account_type=supplier) ve arşivlenmiş
@@ -135,12 +136,29 @@ foreach ($contacts as $attrs) {
     $new_tax = (is_blank_tax_value($best_customer['tax_number']) && !empty($p_tax_number)) ? $p_tax_number : $best_customer['tax_number'];
     $new_address = (trim((string)$best_customer['address']) === '' && !empty($p_address)) ? $p_address : $best_customer['address'];
 
+    // Vergi no değişecekse, aynı numara başka bir müşteride zaten kayıtlı mı bak
+    // (tax_number unique) - çakışırsa o alanı atla, script'in tamamen çökmesini engelle.
+    if ($new_tax !== $best_customer['tax_number']) {
+        $dupe_check = $conn->prepare("SELECT id FROM customers WHERE tax_number = ? AND id != ?");
+        $dupe_check->bind_param("si", $new_tax, $best_customer['id']);
+        $dupe_check->execute();
+        if ($dupe_check->get_result()->num_rows > 0) {
+            $conflicts[] = ['name' => $best_customer['name'], 'tax_number' => $new_tax];
+            $new_tax = $best_customer['tax_number'];
+        }
+        $dupe_check->close();
+    }
+
     if ($new_tax !== $best_customer['tax_number'] || $new_address !== $best_customer['address']) {
-        $stmt = $conn->prepare("UPDATE customers SET tax_number = ?, address = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $new_tax, $new_address, $best_customer['id']);
-        $stmt->execute();
-        $stmt->close();
-        $updated_count++;
+        try {
+            $stmt = $conn->prepare("UPDATE customers SET tax_number = ?, address = ? WHERE id = ?");
+            $stmt->bind_param("ssi", $new_tax, $new_address, $best_customer['id']);
+            $stmt->execute();
+            $stmt->close();
+            $updated_count++;
+        } catch (mysqli_sql_exception $e) {
+            $conflicts[] = ['name' => $best_customer['name'], 'tax_number' => $new_tax];
+        }
     } else {
         $already_ok_count++;
     }
@@ -151,8 +169,10 @@ $_SESSION['parasut_sync_result'] = [
     'updated' => $updated_count,
     'already_ok' => $already_ok_count,
     'unmatched' => $unmatched,
+    'conflicts' => $conflicts,
 ];
-$_SESSION['success'] = count($contacts) . ' Paraşüt kişisi tarandı: ' . $updated_count . ' müşteri güncellendi, ' . count($unmatched) . ' eşleşmedi (aşağıda listelendi).';
+$_SESSION['success'] = count($contacts) . ' Paraşüt kişisi tarandı: ' . $updated_count . ' müşteri güncellendi, ' . count($unmatched) . ' eşleşmedi'
+    . (!empty($conflicts) ? ', ' . count($conflicts) . ' çakışma (vergi no başka bir kayıtta zaten var - atlandı)' : '') . '.';
 header('Location: customers.php');
 exit();
 ?>
