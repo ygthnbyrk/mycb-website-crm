@@ -112,19 +112,19 @@ function claude_ocr_tax_certificate($file_bytes, $mime_type) {
         [
             'type' => 'text',
             'text' => "Bu bir Türkiye vergi levhası (JPG fotoğraf ya da PDF) olabilir, ya da bambaşka bir şey (cihaz etiketi, SIM ambalajı, alakasız bir belge) olabilir. Levhanın standart alanları: ADI SOYADI, TİCARET ÜNVANI, İŞ YERİ ADRESİ, VERGİ TÜRÜ, VERGİ DAİRESİ, VERGİ KİMLİK NO (VKN — barkodlu, 10 hane), TC KİMLİK NO (11 hane).\n\n" .
-                "1) entity_type — ÖNCE 'VERGİ TÜRÜ' alanına bak: 'KURUMLAR VERGİSİ' yazıyorsa 'tuzel'; 'YILLIK GELİR VERGİSİ' (veya benzeri bir gelir vergisi türü) yazıyorsa 'sahis'. Emin olamazsan ADI SOYADI ve TC KİMLİK NO alanlarına bak: tüzel şirketlerde bu ikisi BOŞTUR (sadece TİCARET ÜNVANI ve VERGİ KİMLİK NO dolu olur); şahıs işletmelerinde ADI SOYADI ve TC KİMLİK NO DOLUDUR (VERGİ KİMLİK NO da ayrıca dolu olabilir, bu normaldir).\n" .
-                "2) name — Önce TİCARET ÜNVANI alanındaki işletme/şirket adını yaz (varsa, hem tüzel hem şahısta genelde doludur). TİCARET ÜNVANI boşsa ADI SOYADI'nı yaz.\n" .
-                "3) tax_number — entity_type='sahis' ise MUTLAKA 'TC KİMLİK NO' alanındaki 11 haneli numarayı yaz (VKN'yi DEĞİL — şahıs levhasında VKN de dolu olsa bile bu sistemde şahıslar için TC kimlik no kullanılıyor). entity_type='tuzel' ise 'VERGİ KİMLİK NO' alanındaki 10 haneli numarayı yaz (TC KİMLİK NO alanı tüzelde zaten boştur).\n" .
-                "4) address — İŞ YERİ ADRESİ alanındaki tam adresi yaz.\n" .
-                "5) notes — Emin olamadığın kısımları buraya yaz. Belge bir vergi levhası DEĞİLSE (örn. cihaz etiketi, SIM ambalajı, başka bir şey), bunu açıkça belirt ve entity_type/name/tax_number/address alanlarını null bırak.\n\n" .
-                "Herhangi bir alanı okuyamıyorsan null bırak, uydurma.",
+                "1) entity_type — ÖNCE 'VERGİ TÜRÜ' alanına bak: 'KURUMLAR VERGİSİ' yazıyorsa 'tuzel'; 'YILLIK GELİR VERGİSİ' (veya benzeri bir gelir vergisi türü) yazıyorsa 'sahis'. Emin olamazsan ADI SOYADI ve TC KİMLİK NO alanlarına bak: tüzel şirketlerde bu ikisi BOŞTUR (sadece TİCARET ÜNVANI ve VERGİ KİMLİK NO dolu olur); şahıs işletmelerinde ADI SOYADI ve TC KİMLİK NO DOLUDUR (VERGİ KİMLİK NO da ayrıca dolu olabilir, bu normaldir). Belge bir vergi levhası değilse ya da hiç anlayamadıysan 'bilinmiyor' yaz.\n" .
+                "2) name — Önce TİCARET ÜNVANI alanındaki işletme/şirket adını yaz (varsa, hem tüzel hem şahısta genelde doludur). TİCARET ÜNVANI boşsa ADI SOYADI'nı yaz. Okuyamıyorsan null bırak.\n" .
+                "3) tax_number — entity_type='sahis' ise MUTLAKA 'TC KİMLİK NO' alanındaki 11 haneli numarayı yaz (VKN'yi DEĞİL — şahıs levhasında VKN de dolu olsa bile bu sistemde şahıslar için TC kimlik no kullanılıyor). entity_type='tuzel' ise 'VERGİ KİMLİK NO' alanındaki 10 haneli numarayı yaz (TC KİMLİK NO alanı tüzelde zaten boştur). Okuyamıyorsan null bırak.\n" .
+                "4) address — İŞ YERİ ADRESİ alanındaki tam adresi yaz. Okuyamıyorsan null bırak.\n" .
+                "5) notes — Emin olamadığın kısımları buraya yaz. Belge bir vergi levhası DEĞİLSE (örn. cihaz etiketi, SIM ambalajı, başka bir şey), bunu açıkça belirt.\n\n" .
+                "Uydurma, emin olmadığın alanları boş (null) bırak.",
         ],
     ];
 
     $schema = [
         'type' => 'object',
         'properties' => [
-            'entity_type' => ['type' => ['string', 'null'], 'enum' => ['tuzel', 'sahis', null]],
+            'entity_type' => ['type' => 'string', 'enum' => ['tuzel', 'sahis', 'bilinmiyor']],
             'name' => ['type' => ['string', 'null']],
             'tax_number' => ['type' => ['string', 'null']],
             'address' => ['type' => ['string', 'null']],
