@@ -58,11 +58,26 @@ if ($fetch_error) {
     exit();
 }
 
+// CRM'de bazı eski kayıtlarda vergi no bilinmediğinde "BILINMIYOR-xxxx" gibi bir
+// yer tutucu girilmiş (boş string değil) - bunu da "doldurulabilir" say.
+function is_blank_tax_value($v) {
+    $v = trim((string)$v);
+    if ($v === '') return true;
+    if (stripos($v, 'bilinmiyor') === 0) return true;
+    return false;
+}
+
 // --- CRM'deki mevcut müşterileri normalize edilmiş isimle önbelleğe al ---
 $existing = [];
-$res = $conn->query("SELECT id, name FROM customers");
+$res = $conn->query("SELECT id, name, tax_number, address FROM customers");
 while ($row = $res->fetch_assoc()) {
-    $existing[] = ['id' => $row['id'], 'name' => $row['name'], 'norm' => normalize_tr_upper($row['name'])];
+    $existing[] = [
+        'id' => $row['id'],
+        'name' => $row['name'],
+        'norm' => normalize_tr_upper($row['name']),
+        'tax_number' => $row['tax_number'],
+        'address' => $row['address'],
+    ];
 }
 
 $updated_count = 0;
@@ -91,7 +106,7 @@ foreach ($contacts as $attrs) {
     // benziyorsa onunla eşleştir - ikisinden en yüksek benzerlik skorunu al.
     $norm_candidates = array_filter([normalize_tr_upper($p_name), normalize_tr_upper($p_short_name)]);
 
-    $best_id = null;
+    $best_customer = null;
     $best_pct = 0.0;
     $second_pct = 0.0;
     foreach ($existing as $c) {
@@ -103,32 +118,32 @@ foreach ($contacts as $attrs) {
         if ($local_best > $best_pct) {
             $second_pct = $best_pct;
             $best_pct = $local_best;
-            $best_id = $c['id'];
+            $best_customer = $c;
         } elseif ($local_best > $second_pct) {
             $second_pct = $local_best;
         }
     }
 
     // Güvenli eşleşme: yüksek benzerlik VE en yakın ikinci adaydan belirgin fark
-    $confident_match = $best_id && $best_pct >= 85 && ($best_pct - $second_pct) >= 5;
+    $confident_match = $best_customer && $best_pct >= 85 && ($best_pct - $second_pct) >= 5;
 
     if (!$confident_match) {
         $unmatched[] = ['name' => $p_name ?: $p_short_name, 'tax_number' => $p_tax_number];
         continue;
     }
 
-    $stmt = $conn->prepare("UPDATE customers SET
-        tax_number = COALESCE(NULLIF(tax_number, ''), NULLIF(?, '')),
-        address = COALESCE(NULLIF(address, ''), NULLIF(?, ''))
-        WHERE id = ?");
-    $stmt->bind_param("ssi", $p_tax_number, $p_address, $best_id);
-    $stmt->execute();
-    if ($stmt->affected_rows > 0) {
+    $new_tax = (is_blank_tax_value($best_customer['tax_number']) && !empty($p_tax_number)) ? $p_tax_number : $best_customer['tax_number'];
+    $new_address = (trim((string)$best_customer['address']) === '' && !empty($p_address)) ? $p_address : $best_customer['address'];
+
+    if ($new_tax !== $best_customer['tax_number'] || $new_address !== $best_customer['address']) {
+        $stmt = $conn->prepare("UPDATE customers SET tax_number = ?, address = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $new_tax, $new_address, $best_customer['id']);
+        $stmt->execute();
+        $stmt->close();
         $updated_count++;
     } else {
         $already_ok_count++;
     }
-    $stmt->close();
 }
 
 $_SESSION['parasut_sync_result'] = [
