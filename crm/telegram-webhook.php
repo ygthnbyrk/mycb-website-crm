@@ -17,29 +17,18 @@ if (!$message) {
     exit;
 }
 
-$caption_check = $message['caption'] ?? '';
-$is_tax_document = !empty($message['document']);
-$is_tax_photo = !empty($message['photo']) && stripos($caption_check, 'vergi') !== false;
-
-// Vergi levhası (PDF ek dosyası, ya da caption'ında "vergi" geçen tek foto) -
-// cihaz/sim akışından tamamen ayrı, kendi kuyruğuna gider.
-if ($is_tax_document || $is_tax_photo) {
-    if ($is_tax_document) {
-        $tax_file_id = $message['document']['file_id'];
-        $tax_mime_type = $message['document']['mime_type'] ?? 'application/pdf';
-        $tax_media_type = 'document';
-    } else {
-        $tax_largest_photo = end($message['photo']);
-        $tax_file_id = $tax_largest_photo['file_id'];
-        $tax_mime_type = 'image/jpeg';
-        $tax_media_type = 'photo';
-    }
-
+// Vergi levhası her zaman PDF ek dosyası (document) olarak gelir - cihaz/sim
+// fotoğrafları hiçbir zaman document olarak gelmez, sadece kamera fotoğrafı (photo)
+// olarak gelir. Vergi levhası JPG olarak gönderilirse (caption'a hiçbir şey yazmaya
+// gerek yok) aşağıdaki tek-foto akışı, cihaz/sim bulunamazsa otomatik bu akışa döner.
+if (!empty($message['document'])) {
+    $tax_file_id = $message['document']['file_id'];
+    $tax_mime_type = $message['document']['mime_type'] ?? 'application/pdf';
     $tax_chat_id = $message['chat']['id'];
     $tax_caption = $message['caption'] ?? null;
 
-    $stmt = $conn->prepare("INSERT INTO telegram_pending_customers (telegram_chat_id, telegram_file_id, telegram_media_type, caption_raw) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("isss", $tax_chat_id, $tax_file_id, $tax_media_type, $tax_caption);
+    $stmt = $conn->prepare("INSERT INTO telegram_pending_customers (telegram_chat_id, telegram_file_id, telegram_media_type, caption_raw) VALUES (?, ?, 'document', ?)");
+    $stmt->bind_param("iss", $tax_chat_id, $tax_file_id, $tax_caption);
     $stmt->execute();
     $tax_row_id = $conn->insert_id;
     $stmt->close();
@@ -152,6 +141,14 @@ function process_pending_telegram_row($conn, $row_id) {
     $sim = $parsed['simcard'] ?? [];
     $notes = $parsed['notes'] ?? '';
 
+    // Tek foto (albüm değil) gönderilmiş ve ne cihaz ne sim bulunduysa, muhtemelen
+    // bu bir vergi levhası fotoğrafı - caption'a bağımlı kalmadan o akışa devret.
+    $is_solo_photo = empty($row['photo_2_file_id']);
+    if ($is_solo_photo && empty($device['found']) && empty($sim['found'])) {
+        redirect_solo_photo_to_tax_certificate($conn, $row_id, $row);
+        return;
+    }
+
     $imei = !empty($device['found']) ? trim((string)($device['imei'] ?? '')) : null;
     $serial = !empty($device['found']) ? trim((string)($device['serial_number'] ?? '')) : null;
     $model_guess = !empty($device['found']) ? trim((string)($device['model_guess'] ?? '')) : null;
@@ -232,6 +229,24 @@ function mark_row_error($conn, $row_id, $error_message) {
     $stmt->bind_param("si", $error_message, $row_id);
     $stmt->execute();
     $stmt->close();
+}
+
+// Tek foto olarak gelen ve cihaz/sim etiketi olmadığı anlaşılan bir görseli
+// telegram_pending_matches'ten silip telegram_pending_customers'a taşır ve
+// vergi levhası olarak işler.
+function redirect_solo_photo_to_tax_certificate($conn, $row_id, $row) {
+    $stmt = $conn->prepare("INSERT INTO telegram_pending_customers (telegram_chat_id, telegram_file_id, telegram_media_type, caption_raw) VALUES (?, ?, 'photo', ?)");
+    $stmt->bind_param("iss", $row['telegram_chat_id'], $row['photo_1_file_id'], $row['caption_raw']);
+    $stmt->execute();
+    $new_id = $conn->insert_id;
+    $stmt->close();
+
+    $del = $conn->prepare("DELETE FROM telegram_pending_matches WHERE id = ?");
+    $del->bind_param("i", $row_id);
+    $del->execute();
+    $del->close();
+
+    process_pending_telegram_customer_row($conn, $new_id, 'image/jpeg');
 }
 
 function process_pending_telegram_customer_row($conn, $row_id, $mime_type) {

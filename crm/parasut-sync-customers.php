@@ -68,10 +68,16 @@ $already_ok_count = 0;
 $unmatched = [];
 
 foreach ($contacts as $attrs) {
-    $p_name = trim((string)($attrs['name'] ?? $attrs['short_name'] ?? ''));
-    if (empty($p_name)) continue;
+    // Sadece gerçek müşteriler - tedarikçileri (account_type=supplier) ve arşivlenmiş
+    // kayıtları CRM müşteri listesine karıştırma.
+    if (($attrs['account_type'] ?? '') !== 'customer') continue;
+    if (!empty($attrs['archived'])) continue;
 
-    $p_tax_number = trim((string)($attrs['tax_number'] ?? $attrs['tax_no'] ?? ''));
+    $p_name = trim((string)($attrs['name'] ?? ''));
+    $p_short_name = trim((string)($attrs['short_name'] ?? ''));
+    if (empty($p_name) && empty($p_short_name)) continue;
+
+    $p_tax_number = trim((string)($attrs['tax_number'] ?? ''));
     $p_address_parts = array_filter([
         trim((string)($attrs['address'] ?? '')),
         trim((string)($attrs['district'] ?? '')),
@@ -79,19 +85,25 @@ foreach ($contacts as $attrs) {
     ]);
     $p_address = implode(' / ', $p_address_parts);
 
-    $norm_p_name = normalize_tr_upper($p_name);
+    // Paraşüt'te hem tam unvan (name) hem kısa ad (short_name) var; CRM'de hangisine
+    // benziyorsa onunla eşleştir - ikisinden en yüksek benzerlik skorunu al.
+    $norm_candidates = array_filter([normalize_tr_upper($p_name), normalize_tr_upper($p_short_name)]);
 
     $best_id = null;
     $best_pct = 0.0;
     $second_pct = 0.0;
     foreach ($existing as $c) {
-        similar_text($norm_p_name, $c['norm'], $pct);
-        if ($pct > $best_pct) {
+        $local_best = 0.0;
+        foreach ($norm_candidates as $norm_p_name) {
+            similar_text($norm_p_name, $c['norm'], $pct);
+            if ($pct > $local_best) $local_best = $pct;
+        }
+        if ($local_best > $best_pct) {
             $second_pct = $best_pct;
-            $best_pct = $pct;
+            $best_pct = $local_best;
             $best_id = $c['id'];
-        } elseif ($pct > $second_pct) {
-            $second_pct = $pct;
+        } elseif ($local_best > $second_pct) {
+            $second_pct = $local_best;
         }
     }
 
@@ -99,7 +111,7 @@ foreach ($contacts as $attrs) {
     $confident_match = $best_id && $best_pct >= 85 && ($best_pct - $second_pct) >= 5;
 
     if (!$confident_match) {
-        $unmatched[] = ['name' => $p_name, 'tax_number' => $p_tax_number];
+        $unmatched[] = ['name' => $p_name ?: $p_short_name, 'tax_number' => $p_tax_number];
         continue;
     }
 
