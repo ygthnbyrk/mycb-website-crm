@@ -15,10 +15,6 @@ $user_name = $_SESSION['user_name'];
 $error = '';
 $success = '';
 
-// parasut-sync-customers.php gibi ayrı sayfalardan redirect sonrası flash mesaj
-if (!empty($_SESSION['success'])) { $success = $_SESSION['success']; unset($_SESSION['success']); }
-if (!empty($_SESSION['error'])) { $error = $_SESSION['error']; unset($_SESSION['error']); }
-
 $conn->query("CREATE TABLE IF NOT EXISTS parasut_tokens (
     id INT PRIMARY KEY AUTO_INCREMENT,
     access_token TEXT,
@@ -453,32 +449,6 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                         <?php echo icon('x'); ?> Bağlantıyı Kes
                     </button>
                 </form>
-            </div>
-
-            <div class="detail-card" style="margin-bottom:16px;">
-                <h3><?php echo icon('users'); ?> Müşteri Senkronu</h3>
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
-                    Paraşüt'teki tüm müşteri kayıtlarını çeker, CRM'deki müşterilerle isimle eşleştirip
-                    eksik vergi no / adres bilgilerini doldurur. Var olan bilgiyi asla ezmez, eşleşmeyen
-                    kayıtları sadece listeler (otomatik eklemez).
-                </p>
-                <a href="parasut-sync-customers.php" class="btn btn-primary"><?php echo icon('refresh'); ?> Müşterileri Senkronize Et</a>
-
-                <?php if (!empty($_SESSION['parasut_sync_result'])): $sr = $_SESSION['parasut_sync_result']; unset($_SESSION['parasut_sync_result']); ?>
-                    <div style="margin-top:14px;font-size:13.5px;">
-                        <div><?php echo $sr['total_contacts']; ?> Paraşüt kişisi tarandı, <?php echo $sr['updated']; ?> müşteri güncellendi, <?php echo $sr['already_ok']; ?> zaten güncel.</div>
-                        <?php if (!empty($sr['unmatched'])): ?>
-                            <details style="margin-top:8px;">
-                                <summary style="cursor:pointer;color:var(--text-secondary);"><?php echo count($sr['unmatched']); ?> kayıt CRM'de eşleşmedi (görmek için tıkla)</summary>
-                                <ul style="margin-top:8px;max-height:240px;overflow-y:auto;">
-                                    <?php foreach ($sr['unmatched'] as $u): ?>
-                                        <li><?php echo htmlspecialchars($u['name']); ?><?php echo $u['tax_number'] ? ' — ' . htmlspecialchars($u['tax_number']) : ''; ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </details>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
             </div>
 
             <div class="year-tabs">

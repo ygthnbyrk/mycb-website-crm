@@ -3,25 +3,27 @@ require_once 'config.php';
 require_once 'partials/icons.php';
 require_once 'partials/parasut-helpers.php';
 
+// Müşteri senkronu admin + bilgi@ herkesin kullanabildiği Müşteriler sayfasından
+// tetikleniyor - Paraşüt bağlantısını admin kurar ama günlük senkronu herkes çalıştırabilir.
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
-    exit();
-}
-if (($_SESSION['user_role'] ?? '') !== 'admin') {
-    header('Location: hub.php');
     exit();
 }
 
 $token = parasut_get_valid_token($conn);
 if (!$token) {
-    $_SESSION['error'] = 'Paraşüt bağlantısı yok. Önce Kârlılık sayfasından bağlanın.';
-    header('Location: parasut.php');
+    $_SESSION['error'] = 'Paraşüt bağlantısı yok. Bir admin önce Kârlılık sayfasından bağlansın.';
+    header('Location: customers.php');
     exit();
 }
 
-// İlk kurulumda Paraşüt'ün gerçek contact alan adlarını görmek için:
-// parasut-sync-customers.php?debug=1
+// İlk kurulumda Paraşüt'ün gerçek contact alan adlarını görmek için (admin-only,
+// ham veri PII içeriyor): parasut-sync-customers.php?debug=1
 if (isset($_GET['debug'])) {
+    if (($_SESSION['user_role'] ?? '') !== 'admin') {
+        header('Location: customers.php');
+        exit();
+    }
     $resp = parasut_api_get($token['access_token'], $token['company_id'], '/contacts?page[size]=3&page[number]=1');
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($resp['body'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -52,7 +54,7 @@ do {
 
 if ($fetch_error) {
     $_SESSION['error'] = 'Paraşüt kişileri çekilemedi: ' . $fetch_error;
-    header('Location: parasut.php');
+    header('Location: customers.php');
     exit();
 }
 
@@ -136,6 +138,6 @@ $_SESSION['parasut_sync_result'] = [
     'unmatched' => $unmatched,
 ];
 $_SESSION['success'] = count($contacts) . ' Paraşüt kişisi tarandı: ' . $updated_count . ' müşteri güncellendi, ' . count($unmatched) . ' eşleşmedi (aşağıda listelendi).';
-header('Location: parasut.php');
+header('Location: customers.php');
 exit();
 ?>

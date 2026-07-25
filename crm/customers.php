@@ -77,6 +77,31 @@ $stmt->close();
             </div>
         <?php endif; ?>
 
+        <div class="detail-card" style="margin-bottom:16px;">
+            <h3><?php echo icon('refresh'); ?> Paraşüt Müşteri Senkronu</h3>
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                Paraşüt'teki müşteri kayıtlarını çeker, isimle eşleştirip eksik vergi no / adres
+                bilgilerini doldurur. Var olan bilgiyi asla ezmez, eşleşmeyen kayıtları sadece listeler.
+            </p>
+            <a href="parasut-sync-customers.php" class="btn btn-primary"><?php echo icon('refresh'); ?> Müşterileri Senkronize Et</a>
+
+            <?php if (!empty($_SESSION['parasut_sync_result'])): $sr = $_SESSION['parasut_sync_result']; unset($_SESSION['parasut_sync_result']); ?>
+                <div style="margin-top:14px;font-size:13.5px;">
+                    <div><?php echo $sr['total_contacts']; ?> Paraşüt kişisi tarandı, <?php echo $sr['updated']; ?> müşteri güncellendi, <?php echo $sr['already_ok']; ?> zaten güncel.</div>
+                    <?php if (!empty($sr['unmatched'])): ?>
+                        <details style="margin-top:8px;">
+                            <summary style="cursor:pointer;color:var(--text-secondary);"><?php echo count($sr['unmatched']); ?> kayıt CRM'de eşleşmedi (görmek için tıkla)</summary>
+                            <ul style="margin-top:8px;max-height:240px;overflow-y:auto;">
+                                <?php foreach ($sr['unmatched'] as $u): ?>
+                                    <li><?php echo htmlspecialchars($u['name']); ?><?php echo $u['tax_number'] ? ' — ' . htmlspecialchars($u['tax_number']) : ''; ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </details>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- KPI -->
         <div class="stats-bar">
             <div class="stat-box">
