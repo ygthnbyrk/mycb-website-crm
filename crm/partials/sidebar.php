@@ -8,6 +8,7 @@ $active_page = $active_page ?? '';
 
 $nav_items = [
     ['page' => 'dashboard',          'href' => 'dashboard.php',          'icon' => 'home',    'label' => 'Ana Sayfa'],
+    ['page' => 'telegram-review',    'href' => 'telegram-review.php',    'icon' => 'bell',    'label' => 'Telegram Onay'],
     ['page' => 'customers',          'href' => 'customers.php',          'icon' => 'users',   'label' => 'Müşteriler'],
     ['page' => 'products',           'href' => 'products.php',           'icon' => 'package', 'label' => 'Ürünler'],
     ['page' => 'simcards',           'href' => 'simcards.php',           'icon' => 'sim',     'label' => 'Sim Kartlar'],

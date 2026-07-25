@@ -13,6 +13,10 @@ define('PARASUT_CLIENT_ID', getenv('PARASUT_CLIENT_ID') ?: '');
 define('PARASUT_CLIENT_SECRET', getenv('PARASUT_CLIENT_SECRET') ?: '');
 define('PARASUT_REDIRECT_URI', 'urn:ietf:wg:oauth:2.0:oob');
 
+define('TELEGRAM_BOT_TOKEN', getenv('TELEGRAM_BOT_TOKEN') ?: '');
+define('TELEGRAM_WEBHOOK_SECRET', getenv('TELEGRAM_WEBHOOK_SECRET') ?: '');
+define('ANTHROPIC_API_KEY', getenv('ANTHROPIC_API_KEY') ?: '');
+
 try {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $conn->set_charset("utf8mb4");
