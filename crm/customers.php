@@ -87,17 +87,7 @@ $stmt->close();
 
             <?php if (!empty($_SESSION['parasut_sync_result'])): $sr = $_SESSION['parasut_sync_result']; unset($_SESSION['parasut_sync_result']); ?>
                 <div style="margin-top:14px;font-size:13.5px;">
-                    <div><?php echo $sr['total_contacts']; ?> Paraşüt kişisi tarandı, <?php echo $sr['updated']; ?> müşteri güncellendi, <?php echo $sr['already_ok']; ?> zaten güncel.</div>
-                    <?php if (!empty($sr['unmatched'])): ?>
-                        <details style="margin-top:8px;">
-                            <summary style="cursor:pointer;color:var(--text-secondary);"><?php echo count($sr['unmatched']); ?> kayıt CRM'de eşleşmedi (görmek için tıkla)</summary>
-                            <ul style="margin-top:8px;max-height:240px;overflow-y:auto;">
-                                <?php foreach ($sr['unmatched'] as $u): ?>
-                                    <li><?php echo htmlspecialchars($u['name']); ?><?php echo $u['tax_number'] ? ' — ' . htmlspecialchars($u['tax_number']) : ''; ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </details>
-                    <?php endif; ?>
+                    <div><?php echo $sr['total_contacts']; ?> Paraşüt kişisi tarandı: <?php echo $sr['created']; ?> yeni müşteri eklendi, <?php echo $sr['updated']; ?> güncellendi, <?php echo $sr['already_ok']; ?> zaten güncel.</div>
                     <?php if (!empty($sr['conflicts'])): ?>
                         <details style="margin-top:8px;">
                             <summary style="cursor:pointer;color:var(--warning);"><?php echo count($sr['conflicts']); ?> çakışma - vergi no başka bir müşteride zaten kayıtlı, elle kontrol et (görmek için tıkla)</summary>

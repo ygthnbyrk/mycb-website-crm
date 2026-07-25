@@ -82,8 +82,12 @@ while ($row = $res->fetch_assoc()) {
 
 $updated_count = 0;
 $already_ok_count = 0;
-$unmatched = [];
+$created_count = 0;
 $conflicts = [];
+
+function generate_unknown_tax_placeholder() {
+    return 'BILINMIYOR-' . substr(bin2hex(random_bytes(8)), 0, 13);
+}
 
 foreach ($contacts as $attrs) {
     // Sadece gerçek müşteriler - tedarikçileri (account_type=supplier) ve arşivlenmiş
@@ -94,6 +98,7 @@ foreach ($contacts as $attrs) {
     $p_name = trim((string)($attrs['name'] ?? ''));
     $p_short_name = trim((string)($attrs['short_name'] ?? ''));
     if (empty($p_name) && empty($p_short_name)) continue;
+    $display_name = $p_name ?: $p_short_name;
 
     $p_tax_number = trim((string)($attrs['tax_number'] ?? ''));
     $p_address_parts = array_filter([
@@ -103,33 +108,58 @@ foreach ($contacts as $attrs) {
     ]);
     $p_address = implode(' / ', $p_address_parts);
 
-    // Paraşüt'te hem tam unvan (name) hem kısa ad (short_name) var; CRM'de hangisine
-    // benziyorsa onunla eşleştir - ikisinden en yüksek benzerlik skorunu al.
-    $norm_candidates = array_filter([normalize_tr_upper($p_name), normalize_tr_upper($p_short_name)]);
-
+    // 1) Önce tam vergi no eşleşmesi dene - isim benzerliğinden daha güvenilir
+    //    (farklı yazılmış aynı şirket de olsa VKN/TCKN aynıysa kesin eşleşmedir).
     $best_customer = null;
-    $best_pct = 0.0;
-    $second_pct = 0.0;
-    foreach ($existing as $c) {
-        $local_best = 0.0;
-        foreach ($norm_candidates as $norm_p_name) {
-            similar_text($norm_p_name, $c['norm'], $pct);
-            if ($pct > $local_best) $local_best = $pct;
-        }
-        if ($local_best > $best_pct) {
-            $second_pct = $best_pct;
-            $best_pct = $local_best;
-            $best_customer = $c;
-        } elseif ($local_best > $second_pct) {
-            $second_pct = $local_best;
+    if (!empty($p_tax_number)) {
+        foreach ($existing as $c) {
+            if ($c['tax_number'] === $p_tax_number) { $best_customer = $c; break; }
         }
     }
 
-    // Güvenli eşleşme: yüksek benzerlik VE en yakın ikinci adaydan belirgin fark
-    $confident_match = $best_customer && $best_pct >= 85 && ($best_pct - $second_pct) >= 5;
+    // 2) Yoksa bulanık isim eşleşmesi dene
+    if (!$best_customer) {
+        // Paraşüt'te hem tam unvan (name) hem kısa ad (short_name) var; CRM'de hangisine
+        // benziyorsa onunla eşleştir - ikisinden en yüksek benzerlik skorunu al.
+        $norm_candidates = array_filter([normalize_tr_upper($p_name), normalize_tr_upper($p_short_name)]);
 
-    if (!$confident_match) {
-        $unmatched[] = ['name' => $p_name ?: $p_short_name, 'tax_number' => $p_tax_number];
+        $best_pct = 0.0;
+        $second_pct = 0.0;
+        foreach ($existing as $c) {
+            $local_best = 0.0;
+            foreach ($norm_candidates as $norm_p_name) {
+                similar_text($norm_p_name, $c['norm'], $pct);
+                if ($pct > $local_best) $local_best = $pct;
+            }
+            if ($local_best > $best_pct) {
+                $second_pct = $best_pct;
+                $best_pct = $local_best;
+                $best_customer = $c;
+            } elseif ($local_best > $second_pct) {
+                $second_pct = $local_best;
+            }
+        }
+
+        // Güvenli eşleşme: yüksek benzerlik VE en yakın ikinci adaydan belirgin fark
+        $confident_match = $best_customer && $best_pct >= 85 && ($best_pct - $second_pct) >= 5;
+        if (!$confident_match) $best_customer = null;
+    }
+
+    // 3) Hiç eşleşme yok - yeni müşteri olarak ekle
+    if (!$best_customer) {
+        $insert_tax = !empty($p_tax_number) ? $p_tax_number : generate_unknown_tax_placeholder();
+        try {
+            $stmt = $conn->prepare("INSERT INTO customers (name, tax_number, address, created_by) VALUES (?, ?, ?, ?)");
+            $stmt->bind_param("sssi", $display_name, $insert_tax, $p_address, $_SESSION['user_id']);
+            $stmt->execute();
+            $new_id = $stmt->insert_id;
+            $stmt->close();
+            $created_count++;
+            // Bu senkron çalışması içinde aynı kayıt tekrar eşleşsin diye önbelleğe ekle
+            $existing[] = ['id' => $new_id, 'name' => $display_name, 'norm' => normalize_tr_upper($display_name), 'tax_number' => $insert_tax, 'address' => $p_address];
+        } catch (mysqli_sql_exception $e) {
+            $conflicts[] = ['name' => $display_name, 'tax_number' => $insert_tax];
+        }
         continue;
     }
 
@@ -166,12 +196,12 @@ foreach ($contacts as $attrs) {
 
 $_SESSION['parasut_sync_result'] = [
     'total_contacts' => count($contacts),
+    'created' => $created_count,
     'updated' => $updated_count,
     'already_ok' => $already_ok_count,
-    'unmatched' => $unmatched,
     'conflicts' => $conflicts,
 ];
-$_SESSION['success'] = count($contacts) . ' Paraşüt kişisi tarandı: ' . $updated_count . ' müşteri güncellendi, ' . count($unmatched) . ' eşleşmedi'
+$_SESSION['success'] = count($contacts) . ' Paraşüt kişisi tarandı: ' . $created_count . ' yeni müşteri eklendi, ' . $updated_count . ' güncellendi, ' . $already_ok_count . ' zaten güncel'
     . (!empty($conflicts) ? ', ' . count($conflicts) . ' çakışma (vergi no başka bir kayıtta zaten var - atlandı)' : '') . '.';
 header('Location: customers.php');
 exit();
