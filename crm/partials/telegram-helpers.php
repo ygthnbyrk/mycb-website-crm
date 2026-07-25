@@ -56,7 +56,9 @@ function claude_ocr_device_and_sim($photo_bytes_list) {
 
     $content[] = [
         'type' => 'text',
-        'text' => "Bu fotoğraf(lar) bir araç takip cihazının etiketini (IMEI/seri numarası barkodu) ve/veya bir SIM kart ambalajını (telefon numarası/operatör) gösterebilir. " .
+        'text' => "Bu fotoğraf(lar) bir araç takip cihazının etiketini (IMEI/seri numarası barkodu) ve/veya bir SIM kart ambalajını (telefon numarası/operatör) gösterebilir.\n\n" .
+            "CİHAZ ETİKETİ kuralları: Etikette 'IMEI' kelimesi yazmıyor olabilir. Seri numarasının (SN) hemen yanında veya altında duran, 14-15 haneli sayısal bir barkod/numara varsa bunu IMEI kabul et ve imei alanına yaz — sırf 'IMEI' etiketi görünmüyor diye imei alanını boş bırakma.\n\n" .
+            "SIM KART AMBALAJI kuralları: Türkiye'deki operatör SIM ambalajlarında genellikle birden fazla sayısal barkod bulunur. ICCID (genelde 19-20 hane, çoğunlukla '89' ile başlar) işimize yaramıyor, onu okuma/raporlama, iccid diye bir alan yok. Asıl aradığın telefon numarası: genelde 10 haneli, başında ülke içi '0' OLMADAN basılmış olabilir (örnek: ambalajda '5496162935' yazıyorsa bu telefon numarasıdır — başına 0 ekleyerek '0549 616 29 35' formatında phone_number alanına yaz). Bu barkodu 'ürün kodu' veya 'parti numarası' sanıp atlama — ICCID'den farklı, ~10 haneli sayısal bir barkod gördüğünde bunun telefon numarası olma ihtimali yüksektir.\n\n" .
             "Her görsel için ne olduğunu belirle ve okuyabildiğin alanları çıkar. Görsel bulanık/açılıysa elinden geleni yap, emin olmadığın rakamları yine de en iyi tahminin olarak yaz ve notes alanına belirsizliği yaz. Hiçbir görselde cihaz veya sim yoksa ilgili found alanını false yap.",
     ];
 
@@ -79,10 +81,9 @@ function claude_ocr_device_and_sim($photo_bytes_list) {
                 'properties' => [
                     'found' => ['type' => 'boolean'],
                     'phone_number' => ['type' => ['string', 'null']],
-                    'iccid' => ['type' => ['string', 'null']],
                     'operator_guess' => ['type' => ['string', 'null']],
                 ],
-                'required' => ['found', 'phone_number', 'iccid', 'operator_guess'],
+                'required' => ['found', 'phone_number', 'operator_guess'],
                 'additionalProperties' => false,
             ],
             'notes' => ['type' => 'string'],
