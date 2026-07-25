@@ -21,6 +21,13 @@ $result = $conn->query($sql);
 $pending_rows = $result->fetch_all(MYSQLI_ASSOC);
 
 $collecting_count = $conn->query("SELECT COUNT(*) as c FROM telegram_pending_matches WHERE status = 'collecting'")->fetch_assoc()['c'];
+
+$customer_sql = "SELECT t.*, c.name AS mc_name, c.tax_number AS mc_tax, c.address AS mc_address
+    FROM telegram_pending_customers t
+    LEFT JOIN customers c ON t.matched_customer_id = c.id
+    WHERE t.status = 'pending'
+    ORDER BY t.created_at DESC";
+$pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -240,9 +247,122 @@ $collecting_count = $conn->query("SELECT COUNT(*) as c FROM telegram_pending_mat
             </div>
         </div>
         <?php endforeach; ?>
+
+        <h2 style="margin: 28px 0 12px;"><?php echo icon('users'); ?> Yeni Müşteri Kayıtları (Vergi Levhası)</h2>
+
+        <?php if (empty($pending_customer_rows)): ?>
+            <div class="card"><div style="padding: 20px;">Onay bekleyen vergi levhası yok.</div></div>
+        <?php endif; ?>
+
+        <?php foreach ($pending_customer_rows as $crow):
+            $cid = $crow['id'];
+            $c_matched = !empty($crow['matched_customer_id']);
+            $is_pdf = $crow['telegram_media_type'] === 'document';
+        ?>
+        <div class="card tg-card">
+            <div class="card-header">
+                <?php echo icon('clock'); ?>
+                <?php echo htmlspecialchars($crow['ocr_name'] ?: 'İsim okunamadı'); ?>
+                <small style="float:right; color: var(--text-secondary);"><?php echo date('d.m.Y H:i', strtotime($crow['created_at'])); ?></small>
+            </div>
+            <div style="padding: 16px;">
+
+                <?php if ($crow['error_message']): ?>
+                    <div class="alert alert-danger">Otomatik okuma hatası: <?php echo htmlspecialchars($crow['error_message']); ?> — alanları manuel doldurun.</div>
+                <?php endif; ?>
+
+                <div class="tg-photos">
+                    <?php if ($is_pdf): ?>
+                        <a href="telegram-photo.php?id=<?php echo $cid; ?>&source=customer" target="_blank" class="btn btn-secondary">📄 PDF'i Aç</a>
+                    <?php else: ?>
+                        <img src="telegram-photo.php?id=<?php echo $cid; ?>&source=customer" alt="Vergi Levhası">
+                    <?php endif; ?>
+                </div>
+
+                <div class="tg-ocr-box">
+                    <div><strong>Tür:</strong> <?php echo $crow['ocr_entity_type'] === 'tuzel' ? 'Tüzel (Ltd/A.Ş)' : ($crow['ocr_entity_type'] === 'sahis' ? 'Şahıs İşletmesi' : '-'); ?></div>
+                    <?php if ($crow['ocr_notes']): ?><div><strong>Not:</strong> <?php echo htmlspecialchars($crow['ocr_notes']); ?></div><?php endif; ?>
+                </div>
+
+                <form method="POST" action="telegram-customer-approve.php">
+                    <input type="hidden" name="pending_id" value="<?php echo $cid; ?>">
+                    <input type="hidden" name="action" value="approve">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>İsim / Unvan <span class="required">*</span></label>
+                            <input type="text" name="name" value="<?php echo htmlspecialchars($crow['ocr_name'] ?: ''); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Vergi No / T.C. Kimlik No <span class="required">*</span></label>
+                            <input type="text" name="tax_number" value="<?php echo htmlspecialchars($crow['ocr_tax_number'] ?: ''); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Adres</label>
+                        <textarea name="address" rows="2"><?php echo htmlspecialchars($crow['ocr_address'] ?: ''); ?></textarea>
+                    </div>
+
+                    <div class="tg-toggle">
+                        <label><input type="radio" name="customer_mode" value="existing" <?php echo $c_matched ? 'checked' : ''; ?> onchange="tcToggle(<?php echo $cid; ?>, 'existing')"> Mevcut müşteriyi güncelle</label>
+                        <label><input type="radio" name="customer_mode" value="new" <?php echo !$c_matched ? 'checked' : ''; ?> onchange="tcToggle(<?php echo $cid; ?>, 'new')"> Yeni müşteri oluştur</label>
+                    </div>
+
+                    <div id="tc_existing_<?php echo $cid; ?>" class="tg-existing-fields <?php echo $c_matched ? 'show' : ''; ?>" style="position: relative;">
+                        <input type="hidden" id="tc_customer_id_<?php echo $cid; ?>" name="customer_id" value="<?php echo $crow['matched_customer_id'] ?: ''; ?>">
+                        <input type="text" id="tc_customer_search_<?php echo $cid; ?>" placeholder="Müşteri ara..." autocomplete="off"
+                               value="<?php echo $c_matched ? htmlspecialchars($crow['mc_name']) : ''; ?>">
+                        <div id="tc_customer_dropdown_<?php echo $cid; ?>" class="autocomplete-dropdown"></div>
+                    </div>
+
+                    <div style="margin-top: 16px;">
+                        <button type="submit" class="btn btn-primary"><?php echo icon('check'); ?> Onayla ve Kaydet</button>
+                    </div>
+                </form>
+                <form method="POST" action="telegram-customer-approve.php" class="tg-reject-form" style="margin-top: -46px; float: right;">
+                    <input type="hidden" name="pending_id" value="<?php echo $cid; ?>">
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('Bu kayıt reddedilsin mi?');"><?php echo icon('x'); ?> Reddet</button>
+                </form>
+            </div>
+        </div>
+        <?php endforeach; ?>
     </div>
 
     <script>
+        function tcToggle(cid, mode) {
+            document.getElementById('tc_existing_' + cid).classList.toggle('show', mode === 'existing');
+        }
+
+        function setupTcAutocomplete(cid) {
+            let tcSearchTimeout;
+            const search = document.getElementById('tc_customer_search_' + cid);
+            const dropdown = document.getElementById('tc_customer_dropdown_' + cid);
+            search.addEventListener('input', function (e) {
+                const q = e.target.value.trim();
+                if (q.length < 2) { dropdown.classList.remove('show'); return; }
+                clearTimeout(tcSearchTimeout);
+                tcSearchTimeout = setTimeout(() => {
+                    fetch('search-customer.php?q=' + encodeURIComponent(q)).then(r => r.json()).then(data => {
+                        dropdown.innerHTML = data.length ? data.map(c => `
+                            <div class="autocomplete-item" onclick="selectTcCustomer_${cid}(${c.id}, '${escapeHtml(c.name)}')">
+                                <strong>${escapeHtml(c.name)}</strong><small>Vergi No: ${escapeHtml(c.tax_number)}</small>
+                            </div>`).join('') : '<div class="autocomplete-item"><small>Sonuç yok</small></div>';
+                        dropdown.classList.add('show');
+                    });
+                }, 300);
+            });
+            window['selectTcCustomer_' + cid] = function (id, name) {
+                document.getElementById('tc_customer_id_' + cid).value = id;
+                search.value = name;
+                dropdown.classList.remove('show');
+            };
+        }
+
+        <?php foreach ($pending_customer_rows as $crow): ?>
+            setupTcAutocomplete(<?php echo $crow['id']; ?>);
+        <?php endforeach; ?>
+
         function tgToggle(rid, kind, mode) {
             document.getElementById(kind + '_existing_' + rid).classList.toggle('show', mode === 'existing');
             document.getElementById(kind + '_new_' + rid).classList.toggle('show', mode === 'new');

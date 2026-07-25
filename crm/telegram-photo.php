@@ -8,14 +8,25 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $id = intval($_GET['id'] ?? 0);
-$slot = intval($_GET['slot'] ?? 1);
-$column = $slot === 2 ? 'photo_2_file_id' : 'photo_1_file_id';
+$source = $_GET['source'] ?? 'match';
 
-$stmt = $conn->prepare("SELECT $column AS file_id FROM telegram_pending_matches WHERE id = ?");
-$stmt->bind_param("i", $id);
-$stmt->execute();
-$row = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+if ($source === 'customer') {
+    $stmt = $conn->prepare("SELECT telegram_file_id AS file_id, telegram_media_type FROM telegram_pending_customers WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $content_type = ($row && $row['telegram_media_type'] === 'document') ? 'application/pdf' : 'image/jpeg';
+} else {
+    $slot = intval($_GET['slot'] ?? 1);
+    $column = $slot === 2 ? 'photo_2_file_id' : 'photo_1_file_id';
+    $stmt = $conn->prepare("SELECT $column AS file_id FROM telegram_pending_matches WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $content_type = 'image/jpeg';
+}
 
 if (!$row || empty($row['file_id'])) {
     http_response_code(404);
@@ -28,7 +39,7 @@ if (!$bytes) {
     exit;
 }
 
-header('Content-Type: image/jpeg');
+header('Content-Type: ' . $content_type);
 header('Cache-Control: private, max-age=3600');
 echo $bytes;
 ?>

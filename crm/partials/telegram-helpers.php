@@ -92,9 +92,58 @@ function claude_ocr_device_and_sim($photo_bytes_list) {
         'additionalProperties' => false,
     ];
 
+    return claude_structured_request($content, $schema);
+}
+
+// Vergi levhası (Ltd/A.Ş için VKN, şahıs işletmesi için T.C. kimlik no) OCR'ı.
+// $mime_type: 'image/jpeg' (Telegram photo) ya da 'application/pdf' (Telegram document).
+function claude_ocr_tax_certificate($file_bytes, $mime_type) {
+    $block_type = $mime_type === 'application/pdf' ? 'document' : 'image';
+
+    $content = [
+        [
+            'type' => $block_type,
+            'source' => [
+                'type' => 'base64',
+                'media_type' => $mime_type,
+                'data' => base64_encode($file_bytes),
+            ],
+        ],
+        [
+            'type' => 'text',
+            'text' => "Bu bir Türkiye vergi levhası (JPG fotoğraf ya da PDF). Belgeyi oku ve şu bilgileri çıkar:\n\n" .
+                "1) entity_type: Levha bir tüzel kişilik (Limited Şirketi / Ltd.Şti, Anonim Şirketi / A.Ş) mi yoksa bir şahıs işletmesi (gerçek kişi) mi ait, belirle. Tüzel ise 'tuzel', şahıs ise 'sahis' yaz.\n" .
+                "2) name: Tüzel ise şirketin tam unvanını, şahıs ise ad-soyadı yaz.\n" .
+                "3) tax_number: Tüzel ise levhada yazan 10 haneli Vergi Kimlik Numarasını (VKN) yaz. Şahıs işletmesiyse levhada VKN yerine genelde 11 haneli T.C. Kimlik Numarası yazar — onu bu alana yaz (bu sistemde aynı alan hem VKN hem T.C. kimlik no için kullanılıyor).\n" .
+                "4) address: Levhadaki tam iş yeri adresini (varsa il/ilçe dahil) yaz.\n" .
+                "5) notes: Emin olamadığın veya belirsiz okuduğun kısımları buraya yaz. Belge net değilse veya vergi levhasına benzemiyorsa bunu da belirt.\n\n" .
+                "Herhangi bir alanı okuyamıyorsan null bırak, uydurma.",
+        ],
+    ];
+
+    $schema = [
+        'type' => 'object',
+        'properties' => [
+            'entity_type' => ['type' => ['string', 'null'], 'enum' => ['tuzel', 'sahis', null]],
+            'name' => ['type' => ['string', 'null']],
+            'tax_number' => ['type' => ['string', 'null']],
+            'address' => ['type' => ['string', 'null']],
+            'notes' => ['type' => 'string'],
+        ],
+        'required' => ['entity_type', 'name', 'tax_number', 'address', 'notes'],
+        'additionalProperties' => false,
+    ];
+
+    return claude_structured_request($content, $schema);
+}
+
+// Ortak: content bloklarını + json_schema'yı Claude Sonnet 5'e gönderir, metin
+// bloğunu tipine göre bulup (index'e güvenmeden - adaptive thinking önce bir
+// "thinking" bloğu döndürebilir) JSON olarak parse eder.
+function claude_structured_request($content, $schema, $max_tokens = 1024) {
     $body = [
         'model' => 'claude-sonnet-5',
-        'max_tokens' => 1024,
+        'max_tokens' => $max_tokens,
         'messages' => [
             ['role' => 'user', 'content' => $content],
         ],
@@ -133,8 +182,6 @@ function claude_ocr_device_and_sim($photo_bytes_list) {
         return $result;
     }
 
-    // content[0] her zaman metin bloğu olmayabilir (adaptive thinking önce bir
-    // "thinking" bloğu döndürebilir) - metin bloğunu tipine göre bul.
     $text_block = null;
     foreach ($decoded['content'] as $block) {
         if (($block['type'] ?? '') === 'text' && !empty($block['text'])) {

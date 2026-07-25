@@ -12,8 +12,46 @@ if (!TELEGRAM_WEBHOOK_SECRET || !hash_equals(TELEGRAM_WEBHOOK_SECRET, $incoming_
 $update = json_decode(file_get_contents('php://input'), true);
 $message = $update['message'] ?? $update['channel_post'] ?? null;
 
+if (!$message) {
+    http_response_code(200);
+    exit;
+}
+
+$caption_check = $message['caption'] ?? '';
+$is_tax_document = !empty($message['document']);
+$is_tax_photo = !empty($message['photo']) && stripos($caption_check, 'vergi') !== false;
+
+// Vergi levhası (PDF ek dosyası, ya da caption'ında "vergi" geçen tek foto) -
+// cihaz/sim akışından tamamen ayrı, kendi kuyruğuna gider.
+if ($is_tax_document || $is_tax_photo) {
+    if ($is_tax_document) {
+        $tax_file_id = $message['document']['file_id'];
+        $tax_mime_type = $message['document']['mime_type'] ?? 'application/pdf';
+        $tax_media_type = 'document';
+    } else {
+        $tax_largest_photo = end($message['photo']);
+        $tax_file_id = $tax_largest_photo['file_id'];
+        $tax_mime_type = 'image/jpeg';
+        $tax_media_type = 'photo';
+    }
+
+    $tax_chat_id = $message['chat']['id'];
+    $tax_caption = $message['caption'] ?? null;
+
+    $stmt = $conn->prepare("INSERT INTO telegram_pending_customers (telegram_chat_id, telegram_file_id, telegram_media_type, caption_raw) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isss", $tax_chat_id, $tax_file_id, $tax_media_type, $tax_caption);
+    $stmt->execute();
+    $tax_row_id = $conn->insert_id;
+    $stmt->close();
+
+    process_pending_telegram_customer_row($conn, $tax_row_id, $tax_mime_type);
+
+    http_response_code(200);
+    exit;
+}
+
 // Fotoğraf içermeyen mesajları (metin, sticker vb.) sessizce yoksay
-if (!$message || empty($message['photo'])) {
+if (empty($message['photo'])) {
     http_response_code(200);
     exit;
 }
@@ -191,6 +229,70 @@ function process_pending_telegram_row($conn, $row_id) {
 
 function mark_row_error($conn, $row_id, $error_message) {
     $stmt = $conn->prepare("UPDATE telegram_pending_matches SET status = 'pending', error_message = ? WHERE id = ?");
+    $stmt->bind_param("si", $error_message, $row_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+function process_pending_telegram_customer_row($conn, $row_id, $mime_type) {
+    $stmt = $conn->prepare("SELECT * FROM telegram_pending_customers WHERE id = ?");
+    $stmt->bind_param("i", $row_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$row) return;
+
+    $bytes = tg_download_file_bytes($row['telegram_file_id']);
+    if (!$bytes) {
+        mark_customer_row_error($conn, $row_id, 'Belge Telegram sunucusundan indirilemedi.');
+        tg_send_message($row['telegram_chat_id'], '⚠️ Vergi levhası indirilemedi, CRM\'de manuel gözden geçirme gerekecek.');
+        return;
+    }
+
+    $ocr = claude_ocr_tax_certificate($bytes, $mime_type);
+
+    if (!$ocr['ok']) {
+        mark_customer_row_error($conn, $row_id, $ocr['error']);
+        tg_send_message($row['telegram_chat_id'], "⚠️ Vergi levhası okunamadı, CRM'de manuel gözden geçirme gerekecek.\nHata: " . $ocr['error']);
+        return;
+    }
+
+    $parsed = $ocr['parsed'];
+    $entity_type = $parsed['entity_type'] ?? null;
+    $name = trim((string)($parsed['name'] ?? ''));
+    $tax_number = trim((string)($parsed['tax_number'] ?? ''));
+    $address = trim((string)($parsed['address'] ?? ''));
+    $notes = $parsed['notes'] ?? '';
+
+    // İsimle mevcut müşteri eşleştir (bulanık, tek sonuç bulunursa - güncelleme senaryosu)
+    $matched_customer_id = null;
+    if (!empty($name)) {
+        $like = "%$name%";
+        $stmt = $conn->prepare("SELECT id FROM customers WHERE name LIKE ? LIMIT 2");
+        $stmt->bind_param("s", $like);
+        $stmt->execute();
+        $results = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+        if (count($results) === 1) $matched_customer_id = $results[0]['id'];
+    }
+
+    $stmt = $conn->prepare("UPDATE telegram_pending_customers SET
+        ocr_entity_type = ?, ocr_name = ?, ocr_tax_number = ?, ocr_address = ?, ocr_notes = ?,
+        ocr_raw_response = ?, matched_customer_id = ?, status = 'pending'
+        WHERE id = ?");
+    $stmt->bind_param("ssssssii", $entity_type, $name, $tax_number, $address, $notes, $ocr['raw'], $matched_customer_id, $row_id);
+    $stmt->execute();
+    $stmt->close();
+
+    $summary = "📄 Vergi levhası CRM onayına düştü.\n";
+    $summary .= "İsim/Unvan: " . ($name ?: '(okunamadı)') . "\n";
+    $summary .= "Vergi/T.C. No: " . ($tax_number ?: '(okunamadı)') . "\n";
+    $summary .= $matched_customer_id ? "Mevcut müşteriyle eşleşti, bilgileri güncellenecek." : "Yeni müşteri olarak eklenecek.";
+    tg_send_message($row['telegram_chat_id'], $summary);
+}
+
+function mark_customer_row_error($conn, $row_id, $error_message) {
+    $stmt = $conn->prepare("UPDATE telegram_pending_customers SET status = 'pending', error_message = ? WHERE id = ?");
     $stmt->bind_param("si", $error_message, $row_id);
     $stmt->execute();
     $stmt->close();

@@ -15,6 +15,10 @@ $user_name = $_SESSION['user_name'];
 $error = '';
 $success = '';
 
+// parasut-sync-customers.php gibi ayrı sayfalardan redirect sonrası flash mesaj
+if (!empty($_SESSION['success'])) { $success = $_SESSION['success']; unset($_SESSION['success']); }
+if (!empty($_SESSION['error'])) { $error = $_SESSION['error']; unset($_SESSION['error']); }
+
 $conn->query("CREATE TABLE IF NOT EXISTS parasut_tokens (
     id INT PRIMARY KEY AUTO_INCREMENT,
     access_token TEXT,
@@ -47,81 +51,7 @@ if ($conn->query("SHOW COLUMNS FROM parasut_cache LIKE 'vat_paid'")->num_rows ==
     $conn->query("ALTER TABLE parasut_cache ADD COLUMN vat_paid DECIMAL(12,2) DEFAULT 0");
 }
 
-function parasut_token_row($conn) {
-    $res = $conn->query("SELECT * FROM parasut_tokens ORDER BY id DESC LIMIT 1");
-    return $res->num_rows ? $res->fetch_assoc() : null;
-}
-
-function parasut_save_token($conn, $access_token, $refresh_token, $expires_in, $company_id) {
-    $expires_at = date('Y-m-d H:i:s', time() + (int)$expires_in);
-    $conn->query("DELETE FROM parasut_tokens");
-    $stmt = $conn->prepare("INSERT INTO parasut_tokens (access_token, refresh_token, company_id, expires_at) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("ssss", $access_token, $refresh_token, $company_id, $expires_at);
-    $stmt->execute();
-}
-
-function parasut_token_request($params) {
-    $ch = curl_init('https://api.parasut.com/oauth/token');
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-    $response = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_err = curl_error($ch);
-    curl_close($ch);
-    if ($curl_err) return ['ok' => false, 'error' => $curl_err];
-    $data = json_decode($response, true);
-    if ($code !== 200 || !isset($data['access_token'])) {
-        return ['ok' => false, 'error' => $data['error_description'] ?? $data['error'] ?? ('HTTP ' . $code)];
-    }
-    return ['ok' => true, 'data' => $data];
-}
-
-function parasut_get_valid_token($conn) {
-    $row = parasut_token_row($conn);
-    if (!$row || empty($row['access_token'])) return null;
-    if (strtotime($row['expires_at']) > time() + 60) {
-        return ['access_token' => $row['access_token'], 'company_id' => $row['company_id']];
-    }
-    $result = parasut_token_request([
-        'grant_type' => 'refresh_token',
-        'client_id' => PARASUT_CLIENT_ID,
-        'client_secret' => PARASUT_CLIENT_SECRET,
-        'refresh_token' => $row['refresh_token'],
-    ]);
-    if (!$result['ok']) return null;
-    parasut_save_token($conn, $result['data']['access_token'], $result['data']['refresh_token'], $result['data']['expires_in'], $row['company_id']);
-    return ['access_token' => $result['data']['access_token'], 'company_id' => $row['company_id']];
-}
-
-// Hiz siniri (429) durumunda birkac kez bekleyip tekrar dener
-function parasut_api_get($access_token, $company_id, $path, $retries = 4) {
-    for ($attempt = 0; $attempt <= $retries; $attempt++) {
-        $ch = curl_init('https://api.parasut.com/v4/' . $company_id . $path);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $access_token,
-            'Accept: application/json',
-        ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        $response = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        $body = json_decode($response, true);
-        if ($code === 429 && $attempt < $retries) {
-            usleep(1500000); // 1.5 sn bekle, tekrar dene
-            continue;
-        }
-        return ['code' => $code, 'body' => $body];
-    }
-    return ['code' => $code ?? 0, 'body' => $body ?? null];
-}
-
-function normalize_tr_upper($s) {
-    return mb_strtoupper(trim(preg_replace('/\s+/', ' ', (string)$s)), 'UTF-8');
-}
+require_once 'partials/parasut-helpers.php';
 
 function parasut_fetch_all_invoices($access_token, $company_id) {
     $all = [];
@@ -523,6 +453,32 @@ $authorize_url = 'https://api.parasut.com/oauth/authorize?client_id=' . urlencod
                         <?php echo icon('x'); ?> Bağlantıyı Kes
                     </button>
                 </form>
+            </div>
+
+            <div class="detail-card" style="margin-bottom:16px;">
+                <h3><?php echo icon('users'); ?> Müşteri Senkronu</h3>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">
+                    Paraşüt'teki tüm müşteri kayıtlarını çeker, CRM'deki müşterilerle isimle eşleştirip
+                    eksik vergi no / adres bilgilerini doldurur. Var olan bilgiyi asla ezmez, eşleşmeyen
+                    kayıtları sadece listeler (otomatik eklemez).
+                </p>
+                <a href="parasut-sync-customers.php" class="btn btn-primary"><?php echo icon('refresh'); ?> Müşterileri Senkronize Et</a>
+
+                <?php if (!empty($_SESSION['parasut_sync_result'])): $sr = $_SESSION['parasut_sync_result']; unset($_SESSION['parasut_sync_result']); ?>
+                    <div style="margin-top:14px;font-size:13.5px;">
+                        <div><?php echo $sr['total_contacts']; ?> Paraşüt kişisi tarandı, <?php echo $sr['updated']; ?> müşteri güncellendi, <?php echo $sr['already_ok']; ?> zaten güncel.</div>
+                        <?php if (!empty($sr['unmatched'])): ?>
+                            <details style="margin-top:8px;">
+                                <summary style="cursor:pointer;color:var(--text-secondary);"><?php echo count($sr['unmatched']); ?> kayıt CRM'de eşleşmedi (görmek için tıkla)</summary>
+                                <ul style="margin-top:8px;max-height:240px;overflow-y:auto;">
+                                    <?php foreach ($sr['unmatched'] as $u): ?>
+                                        <li><?php echo htmlspecialchars($u['name']); ?><?php echo $u['tax_number'] ? ' — ' . htmlspecialchars($u['tax_number']) : ''; ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </details>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="year-tabs">
