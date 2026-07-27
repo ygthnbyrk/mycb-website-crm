@@ -8,9 +8,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $subscription_id = intval($_GET['id'] ?? 0);
+$return_qs = $_GET['return'] ?? '';
+$close_url = 'subscriptions.php' . ($return_qs !== '' ? '?' . $return_qs : '');
 
 if ($subscription_id === 0) {
-    header('Location: subscriptions.php');
+    header('Location: ' . $close_url);
     exit();
 }
 
@@ -26,7 +28,7 @@ $stmt->close();
 
 if (!$subscription) {
     $_SESSION['error'] = 'Abonelik bulunamadı.';
-    header('Location: subscriptions.php');
+    header('Location: ' . $close_url);
     exit();
 }
 
@@ -51,7 +53,7 @@ if ($subscription['item_type'] === 'product') {
     <div class="center-container">
         <div class="center-header">
             <h1>Abonelik Düzenle</h1>
-            <a href="subscriptions.php" class="btn btn-secondary"><?php echo icon('x'); ?> Kapat</a>
+            <a href="<?php echo htmlspecialchars($close_url); ?>" class="btn btn-secondary"><?php echo icon('x'); ?> Kapat</a>
         </div>
 
         <?php if(isset($_SESSION['error'])): ?>
@@ -97,6 +99,7 @@ if ($subscription['item_type'] === 'product') {
             <input type="hidden" name="subscription_id" value="<?php echo $subscription['id']; ?>">
             <input type="hidden" name="current_cycle" value="<?php echo $subscription['cycle']; ?>">
             <input type="hidden" name="item_type" value="<?php echo $subscription['item_type']; ?>">
+            <input type="hidden" name="return" value="<?php echo htmlspecialchars($return_qs); ?>">
 
             <div class="form-section">
                 <h2><?php echo icon('refresh'); ?> Durum Güncelle</h2>

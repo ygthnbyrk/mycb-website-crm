@@ -12,6 +12,8 @@ $subscription_id = intval($_POST['subscription_id']);
 $status = $_POST['status'];
 $notes = $_POST['notes'] ?? '';
 $current_cycle = intval($_POST['current_cycle']);
+$return_qs = $_POST['return'] ?? '';
+$redirect_url = 'subscriptions.php' . ($return_qs !== '' ? '?' . $return_qs : '');
 
 error_log("=== UPDATE SUBSCRIPTION BAŞLADI ===");
 error_log("Subscription ID: " . $subscription_id);
@@ -34,7 +36,7 @@ if ($status === 'Yenilendi') {
     if ($renewal_amount <= 0) {
         error_log("✗ HATA: Renewal amount sıfır veya boş!");
         $_SESSION['error'] = 'Yenileme miktarı girilmemiş veya sıfır! Lütfen tutarları kontrol edin.';
-        header('Location: edit-subscription.php?id=' . $subscription_id);
+        header('Location: edit-subscription.php?id=' . $subscription_id . '&return=' . urlencode($return_qs));
         exit();
     }
     
@@ -48,7 +50,7 @@ if ($status === 'Yenilendi') {
     if (!$old_subscription) {
         error_log("✗ HATA: Abonelik bulunamadı!");
         $_SESSION['error'] = 'Abonelik bulunamadı.';
-        header('Location: subscriptions.php');
+        header('Location: ' . $redirect_url);
         exit();
     }
     
@@ -101,7 +103,7 @@ if ($status === 'Yenilendi') {
     } else {
         error_log("✗ Eski abonelik güncelleme HATASI: " . $stmt_update_old->error);
         $_SESSION['error'] = 'Abonelik güncellenirken hata oluştu: ' . $stmt_update_old->error;
-        header('Location: subscriptions.php');
+        header('Location: ' . $redirect_url);
         exit();
     }
     $stmt_update_old->close();
@@ -142,7 +144,7 @@ if ($status === 'Yenilendi') {
     if (!$stmt_new) {
         error_log("✗ PREPARE HATASI: " . $conn->error);
         $_SESSION['error'] = 'Yeni abonelik hazırlanırken hata: ' . $conn->error;
-        header('Location: subscriptions.php');
+        header('Location: ' . $redirect_url);
         exit();
     }
     
@@ -196,6 +198,6 @@ if ($status === 'Yenilendi') {
 }
 
 error_log("=== UPDATE SUBSCRIPTION BİTTİ ===");
-header('Location: subscriptions.php');
+header('Location: ' . $redirect_url);
 exit();
 ?>

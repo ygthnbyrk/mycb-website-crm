@@ -16,6 +16,7 @@ $filter = $_GET['filter'] ?? 'all';
 $search = $_GET['search'] ?? '';
 $year_filter = $_GET['year'] ?? '';
 $quarter_filter = $_GET['quarter'] ?? '';
+$type_filter = $_GET['type'] ?? '';
 
 // Sayfalama
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -151,6 +152,13 @@ if (!empty($quarter_filter)) {
     $sql .= " AND QUARTER(s.renewal_date) = ?";
     $params[] = intval($quarter_filter);
     $types .= 'i';
+}
+
+// Cihaz/Sim tip filtresi
+if ($type_filter === 'product' || $type_filter === 'simcard') {
+    $sql .= " AND s.item_type = ?";
+    $params[] = $type_filter;
+    $types .= 's';
 }
 
 // Toplam sayı
@@ -299,24 +307,36 @@ $stmt->close();
         <div class="filter-bar">
             <!-- İlk Satır: Durum Filtreleri -->
             <div class="filter-row">
-                <a href="?filter=all<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <?php $tq = ($year_filter ? '&year='.$year_filter : '') . ($quarter_filter ? '&quarter='.$quarter_filter : '') . ($type_filter ? '&type='.$type_filter : ''); ?>
+                <a href="?filter=all<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'all' ? 'active' : ''; ?>">Tümü</a>
-                <a href="?filter=active<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <a href="?filter=active<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'active' ? 'active' : ''; ?>">Aktif</a>
-                <a href="?filter=upcoming<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <a href="?filter=upcoming<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'upcoming' ? 'active' : ''; ?>">Yaklaşan</a>
-                <a href="?filter=overdue<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <a href="?filter=overdue<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'overdue' ? 'active' : ''; ?>">Gecikmişler</a>
-                <a href="?filter=renewed<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <a href="?filter=renewed<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'renewed' ? 'active' : ''; ?>">Yenilendi</a>
-                <a href="?filter=cancelled<?php echo $year_filter ? '&year='.$year_filter : ''; ?><?php echo $quarter_filter ? '&quarter='.$quarter_filter : ''; ?>"
+                <a href="?filter=cancelled<?php echo $tq; ?>"
                    class="btn btn-light <?php echo $filter === 'cancelled' ? 'active' : ''; ?>">İptal</a>
+
+                <span style="width:1px;background:var(--border);margin:0 6px;align-self:stretch;"></span>
+
+                <?php $fq = '&filter='.$filter . ($year_filter ? '&year='.$year_filter : '') . ($quarter_filter ? '&quarter='.$quarter_filter : ''); ?>
+                <a href="?type=<?php echo $fq; ?>"
+                   class="btn btn-light <?php echo $type_filter === '' ? 'active' : ''; ?>">Tümü (Cihaz+Sim)</a>
+                <a href="?type=product<?php echo $fq; ?>"
+                   class="btn btn-light <?php echo $type_filter === 'product' ? 'active' : ''; ?>">Cihaz</a>
+                <a href="?type=simcard<?php echo $fq; ?>"
+                   class="btn btn-light <?php echo $type_filter === 'simcard' ? 'active' : ''; ?>">Sim Kart</a>
             </div>
-            
+
             <!-- İkinci Satır: Zaman ve Arama Filtreleri -->
             <form method="GET" class="filter-row">
                 <input type="hidden" name="filter" value="<?php echo htmlspecialchars($filter); ?>">
-                
+                <input type="hidden" name="type" value="<?php echo htmlspecialchars($type_filter); ?>">
+
                 <!-- Yıl Filtresi -->
                 <select name="year" class="search-input" style="width: 140px; flex: 0 0 auto;" onchange="this.form.submit()">
                     <option value="">Tüm Yıllar</option>
@@ -342,7 +362,7 @@ $stmt->close();
                 <button type="submit" class="btn btn-primary" style="flex: 0 0 auto;">Ara</button>
 
                 <?php if($search || $year_filter || $quarter_filter): ?>
-                    <a href="?filter=<?php echo $filter; ?>" class="btn btn-secondary" style="flex: 0 0 auto;">Temizle</a>
+                    <a href="?filter=<?php echo $filter; ?><?php echo $type_filter ? '&type='.$type_filter : ''; ?>" class="btn btn-secondary" style="flex: 0 0 auto;">Temizle</a>
                 <?php endif; ?>
             </form>
         </div>
@@ -364,6 +384,16 @@ $stmt->close();
                     </tr>
                 </thead>
                 <tbody>
+                    <?php
+                    $return_qs = http_build_query([
+                        'filter' => $filter,
+                        'search' => $search,
+                        'year' => $year_filter,
+                        'quarter' => $quarter_filter,
+                        'type' => $type_filter,
+                        'page' => $page
+                    ]);
+                    ?>
                     <?php if($subscriptions->num_rows > 0): ?>
                         <?php while($sub = $subscriptions->fetch_assoc()): 
                             $days_left = (strtotime($sub['renewal_date']) - strtotime($today)) / (60 * 60 * 24);
@@ -416,7 +446,7 @@ $stmt->close();
                                     </strong>
                                 </td>
                                 <td>
-                                    <button onclick="openEditModal(<?php echo $sub['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                    <button onclick="openEditModal(<?php echo $sub['id']; ?>, '<?php echo urlencode($return_qs); ?>')" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -437,14 +467,15 @@ $stmt->close();
             'filter' => $filter,
             'search' => $search,
             'year' => $year_filter,
-            'quarter' => $quarter_filter
+            'quarter' => $quarter_filter,
+            'type' => $type_filter
         ]);
         ?>
     </div>
 
     <script>
-        function openEditModal(subscriptionId) {
-            window.location.href = 'edit-subscription.php?id=' + subscriptionId;
+        function openEditModal(subscriptionId, returnQs) {
+            window.location.href = 'edit-subscription.php?id=' + subscriptionId + '&return=' + returnQs;
         }
     </script>
 </body>
