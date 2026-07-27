@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'SimpleXLSX.php';
+require_once 'partials/phone-helpers.php';
 
 use Shuchkin\SimpleXLSX;
 
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                     continue;
                 }
                 
-                $phone_number = trim($row[0]);
+                $phone_number = normalize_tr_phone($row[0]);
                 $operator = trim($row[1]);
                 $company = trim($row[2]);
                 $category = trim($row[3]);

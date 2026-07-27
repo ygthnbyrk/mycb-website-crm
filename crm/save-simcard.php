@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'partials/phone-helpers.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -8,7 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $simcard_id = $_POST['simcard_id'] ?? '';
-    $phone_number = trim($_POST['phone_number']);
+    $phone_number = normalize_tr_phone($_POST['phone_number']);
     $operator = trim($_POST['operator']);
     $company = trim($_POST['company']);
     $category = trim($_POST['category']);
