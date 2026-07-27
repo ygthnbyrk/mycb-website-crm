@@ -65,7 +65,7 @@ $rows = [];
 $kastamonu_seen = 0;
 for ($i = 1; $i < count($excel_data); $i++) {
     $r = $excel_data[$i];
-    while (count($r) < 7) $r[] = '';
+    while (count($r) < 8) $r[] = '';
     $musteri = trim($r[0]);
     $seri_no = trim($r[1]);
     $sahiplik = trim($r[2]);
@@ -73,8 +73,11 @@ for ($i = 1; $i < count($excel_data); $i++) {
     $liste_fiyat = trim($r[4]);
     $indirimli_fiyat = trim($r[5]);
     $tarih_raw = trim($r[6]);
+    $durum_raw = trim($r[7]);
 
     if ($musteri === '' && $seri_no === '') continue;
+
+    $is_iptal = mb_strpos(normalize_upper($durum_raw), 'İPTAL') !== false || mb_strpos(normalize_upper($durum_raw), 'IPTAL') !== false;
 
     $row = [
         'no' => $i,
@@ -84,6 +87,8 @@ for ($i = 1; $i < count($excel_data); $i++) {
         'liste_fiyat' => $liste_fiyat,
         'indirimli_fiyat' => $indirimli_fiyat,
         'tarih_raw' => $tarih_raw,
+        'durum_raw' => $durum_raw,
+        'is_iptal' => $is_iptal,
         'excluded' => false,
         'exclude_reason' => '',
         'match' => null,
@@ -108,7 +113,25 @@ for ($i = 1; $i < count($excel_data); $i++) {
 
     $seri_no_clean = preg_replace('/[^0-9A-Za-z]/', '', $seri_no);
 
-    if (!$row['excluded']) {
+    if (!$row['excluded'] && $is_iptal) {
+        if ($seri_no_clean === '') {
+            $row['error'] = 'Seri No (IMEI) boş';
+        } else {
+            $stmt = $conn->prepare("SELECT id, status FROM subscriptions WHERE REPLACE(REPLACE(REPLACE(REPLACE(TRIM(item_detail),' ',''),CHAR(13),''),CHAR(10),''),CHAR(9),'') = ? AND item_type = 'product'");
+            $stmt->bind_param("s", $seri_no_clean);
+            $stmt->execute();
+            $sub = $stmt->get_result()->fetch_assoc();
+            if (!$sub) {
+                $row['error'] = 'İptal - CRM\'de bu IMEI için abonelik kaydı yok, işlem yapılmadı';
+            } else {
+                $row['match'] = [
+                    'action' => 'cancel',
+                    'sub_id' => $sub['id'],
+                    'old_status' => $sub['status'],
+                ];
+            }
+        }
+    } elseif (!$row['excluded']) {
         if ($seri_no_clean === '') {
             $row['error'] = 'Seri No (IMEI) boş';
         } else {
@@ -220,29 +243,37 @@ $to_apply = [];
 foreach ($rows as $r) {
     if (!$r['excluded'] && $r['error'] === '' && $r['match']) {
         $m = $r['match'];
-        $to_apply[] = [
-            'action' => $m['action'],
-            'sub_id' => $m['sub_id'],
-            'customer_id' => $m['customer_id'],
-            'product_id' => $m['product_id'],
-            'sale_id' => $m['sale_id'],
-            'item_name' => $m['item_name'],
-            'imei' => $m['imei'],
-            'initial_sale_date' => $m['initial_sale_date'],
-            'renewal_date' => $m['new_renewal_date'],
-            'renewal_amount' => $m['renewal_amount'],
-            'vat' => $m['vat'],
-            'total_amount' => $m['total_amount'],
-            'subscription_revenue' => $m['our_revenue'],
-        ];
+        if ($m['action'] === 'cancel') {
+            $to_apply[] = [
+                'action' => 'cancel',
+                'sub_id' => $m['sub_id'],
+            ];
+        } else {
+            $to_apply[] = [
+                'action' => $m['action'],
+                'sub_id' => $m['sub_id'],
+                'customer_id' => $m['customer_id'],
+                'product_id' => $m['product_id'],
+                'sale_id' => $m['sale_id'],
+                'item_name' => $m['item_name'],
+                'imei' => $m['imei'],
+                'initial_sale_date' => $m['initial_sale_date'],
+                'renewal_date' => $m['new_renewal_date'],
+                'renewal_amount' => $m['renewal_amount'],
+                'vat' => $m['vat'],
+                'total_amount' => $m['total_amount'],
+                'subscription_revenue' => $m['our_revenue'],
+            ];
+        }
     }
 }
 $_SESSION['subscription_renewal_batch'] = $to_apply;
 
 $count_excluded = count(array_filter($rows, fn($r) => $r['excluded']));
 $count_error = count(array_filter($rows, fn($r) => !$r['excluded'] && $r['error'] !== ''));
-$count_ok = count($to_apply);
-$total_revenue = array_sum(array_column($to_apply, 'subscription_revenue'));
+$count_cancel = count(array_filter($to_apply, fn($x) => $x['action'] === 'cancel'));
+$count_ok = count(array_filter($to_apply, fn($x) => $x['action'] !== 'cancel'));
+$total_revenue = array_sum(array_column(array_filter($to_apply, fn($x) => $x['action'] !== 'cancel'), 'subscription_revenue'));
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -283,6 +314,12 @@ $total_revenue = array_sum(array_column($to_apply, 'subscription_revenue'));
                 <div class="number"><?php echo $count_error; ?></div>
                 <small>İşlenmeyecek</small>
             </div>
+            <div class="stat-card purple">
+                <div class="icon"><?php echo icon('x'); ?></div>
+                <h3>İptal Edilecek</h3>
+                <div class="number"><?php echo $count_cancel; ?></div>
+                <small>Gelir yazılmayacak</small>
+            </div>
             <div class="stat-card blue">
                 <div class="icon"><?php echo icon('dollar'); ?></div>
                 <h3>Bizim Gelirimiz</h3>
@@ -317,6 +354,8 @@ $total_revenue = array_sum(array_column($to_apply, 'subscription_revenue'));
                                     <span class="badge badge-orange">Hariç</span>
                                 <?php elseif ($r['error'] !== ''): ?>
                                     <span class="badge badge-red">Hata</span>
+                                <?php elseif ($r['match'] && $r['match']['action'] === 'cancel'): ?>
+                                    <span class="badge badge-gray">İptal Edilecek</span>
                                 <?php elseif ($r['match'] && $r['match']['action'] === 'insert'): ?>
                                     <span class="badge badge-blue">Yeni Kayıt</span>
                                 <?php else: ?>
@@ -326,11 +365,19 @@ $total_revenue = array_sum(array_column($to_apply, 'subscription_revenue'));
                             <td><?php echo htmlspecialchars($r['musteri']); ?></td>
                             <td><?php echo htmlspecialchars($r['seri_no']); ?></td>
                             <td><?php echo htmlspecialchars($r['sure_raw']); ?></td>
-                            <td><?php echo $r['match'] ? htmlspecialchars($r['match']['old_renewal_date'] ?? 'yok (yeni kayıt)') : '-'; ?></td>
-                            <td><?php echo $r['match'] ? '<strong>' . htmlspecialchars($r['match']['new_renewal_date']) . '</strong>' : '-'; ?></td>
-                            <td><?php echo htmlspecialchars($r['liste_fiyat']); ?> / <?php echo htmlspecialchars($r['indirimli_fiyat'] ?: '-'); ?></td>
-                            <td><?php echo $r['match'] ? number_format($r['match']['renewal_amount'], 2, ',', '.') . ' ₺' : '-'; ?></td>
-                            <td><?php echo $r['match'] ? '<strong style="color:var(--accent);">' . number_format($r['match']['our_revenue'], 2, ',', '.') . ' ₺</strong>' : '-'; ?></td>
+                            <?php if ($r['match'] && $r['match']['action'] === 'cancel'): ?>
+                                <td>-</td>
+                                <td>-</td>
+                                <td><?php echo htmlspecialchars($r['liste_fiyat']); ?> / <?php echo htmlspecialchars($r['indirimli_fiyat'] ?: '-'); ?></td>
+                                <td>-</td>
+                                <td>-</td>
+                            <?php else: ?>
+                                <td><?php echo $r['match'] ? htmlspecialchars($r['match']['old_renewal_date'] ?? 'yok (yeni kayıt)') : '-'; ?></td>
+                                <td><?php echo $r['match'] ? '<strong>' . htmlspecialchars($r['match']['new_renewal_date']) . '</strong>' : '-'; ?></td>
+                                <td><?php echo htmlspecialchars($r['liste_fiyat']); ?> / <?php echo htmlspecialchars($r['indirimli_fiyat'] ?: '-'); ?></td>
+                                <td><?php echo $r['match'] ? number_format($r['match']['renewal_amount'], 2, ',', '.') . ' ₺' : '-'; ?></td>
+                                <td><?php echo $r['match'] ? '<strong style="color:var(--accent);">' . number_format($r['match']['our_revenue'], 2, ',', '.') . ' ₺</strong>' : '-'; ?></td>
+                            <?php endif; ?>
                             <td style="font-size:12px;color:var(--text-muted);">
                                 <?php echo htmlspecialchars($r['excluded'] ? $r['exclude_reason'] : $r['error']); ?>
                             </td>
@@ -341,14 +388,14 @@ $total_revenue = array_sum(array_column($to_apply, 'subscription_revenue'));
         </div>
 
         <div class="actions" style="margin-top:20px;">
-            <?php if ($count_ok > 0): ?>
+            <?php if ($count_ok > 0 || $count_cancel > 0): ?>
                 <form method="POST" action="subscription-renewal-process.php" style="display:inline;">
-                    <button type="submit" class="btn btn-primary" onclick="return confirm('<?php echo $count_ok; ?> abonelik yenilenecek. Devam edilsin mi?');">
-                        <?php echo icon('check'); ?> <?php echo $count_ok; ?> Aboneliği Yenile
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('<?php echo $count_ok; ?> abonelik yenilenecek, <?php echo $count_cancel; ?> abonelik iptal edilecek. Devam edilsin mi?');">
+                        <?php echo icon('check'); ?> Uygula (<?php echo $count_ok; ?> Yenile, <?php echo $count_cancel; ?> İptal)
                     </button>
                 </form>
             <?php else: ?>
-                <button type="button" class="btn btn-primary" disabled>Yenilenecek Kayıt Yok</button>
+                <button type="button" class="btn btn-primary" disabled>İşlenecek Kayıt Yok</button>
             <?php endif; ?>
             <a href="subscription-renewal-upload.php" class="btn btn-secondary">Yeni Dosya Yükle</a>
         </div>

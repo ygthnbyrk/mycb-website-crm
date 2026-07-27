@@ -12,14 +12,23 @@ unset($_SESSION['subscription_renewal_batch']);
 
 $updated = 0;
 $inserted = 0;
+$cancelled = 0;
 $failed = 0;
 
 if (!empty($batch)) {
     $update_stmt = $conn->prepare("UPDATE subscriptions SET renewal_date = ?, renewal_amount = ?, vat = ?, total_amount = ?, subscription_revenue = ?, status = 'Yenilendi' WHERE id = ?");
     $insert_stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, cycle, initial_sale_date, renewal_date, renewal_amount, vat, total_amount, subscription_revenue, status) VALUES (?, ?, ?, 'product', ?, ?, 1, ?, ?, ?, ?, ?, ?, 'Yenilendi')");
+    $cancel_stmt = $conn->prepare("UPDATE subscriptions SET status = 'İptal' WHERE id = ?");
 
     foreach ($batch as $row) {
-        if ($row['action'] === 'update') {
+        if ($row['action'] === 'cancel') {
+            $cancel_stmt->bind_param("i", $row['sub_id']);
+            if ($cancel_stmt->execute()) {
+                $cancelled++;
+            } else {
+                $failed++;
+            }
+        } elseif ($row['action'] === 'update') {
             $update_stmt->bind_param(
                 "sddddi",
                 $row['renewal_date'],
@@ -78,7 +87,7 @@ if (!empty($batch)) {
         </div>
 
         <div class="alert alert-success">
-            <strong><?php echo $updated; ?></strong> mevcut abonelik yenilendi, <strong><?php echo $inserted; ?></strong> yeni abonelik kaydı oluşturuldu.
+            <strong><?php echo $updated; ?></strong> mevcut abonelik yenilendi, <strong><?php echo $inserted; ?></strong> yeni abonelik kaydı oluşturuldu, <strong><?php echo $cancelled; ?></strong> abonelik iptal edildi.
             <?php if ($failed > 0): ?>
                 <br><strong style="color:var(--danger);"><?php echo $failed; ?></strong> kayıt işlenemedi.
             <?php endif; ?>
