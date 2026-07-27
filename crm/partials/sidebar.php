@@ -14,9 +14,9 @@ $nav_items = [
     ['page' => 'simcards',           'href' => 'simcards.php',           'icon' => 'sim',     'label' => 'Sim Kartlar'],
     ['page' => 'create-sale',        'href' => 'create-sale.php',        'icon' => 'dollar',  'label' => 'Satış'],
     ['page' => 'sales-list',         'href' => 'sales-list.php',         'icon' => 'list',    'label' => 'Satış Listesi'],
-    ['page' => 'bulk-sales-upload',  'href' => 'bulk-sales-upload.php',  'icon' => 'upload',  'label' => 'Toplu Satış Yükle'],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
-    ['page' => 'subscription-renewal', 'href' => 'subscription-renewal-upload.php', 'icon' => 'upload', 'label' => 'Abonelik Yenileme'],
+    ['page' => 'bulk-uploads',       'href' => 'bulk-uploads.php',       'icon' => 'upload',  'label' => 'Toplu Yüklemeler',
+        'group' => ['bulk-uploads', 'bulk-sales-upload', 'subscription-renewal']],
 ];
 
 if (($_SESSION['user_role'] ?? '') === 'admin') {
@@ -32,8 +32,10 @@ if (($_SESSION['user_role'] ?? '') === 'admin') {
         <img src="assets/images/logo-light.png" alt="MYCB">
     </div>
     <nav class="nav-menu">
-        <?php foreach ($nav_items as $item): ?>
-            <a href="<?php echo $item['href']; ?>" class="nav-item<?php echo $active_page === $item['page'] ? ' active' : ''; ?>">
+        <?php foreach ($nav_items as $item):
+            $is_active = in_array($active_page, $item['group'] ?? [$item['page']], true);
+        ?>
+            <a href="<?php echo $item['href']; ?>" class="nav-item<?php echo $is_active ? ' active' : ''; ?>">
                 <?php echo icon($item['icon']); ?>
                 <span><?php echo $item['label']; ?></span>
             </a>
