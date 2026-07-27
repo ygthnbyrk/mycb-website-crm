@@ -15,6 +15,8 @@ define('PARASUT_REDIRECT_URI', 'urn:ietf:wg:oauth:2.0:oob');
 
 define('TELEGRAM_BOT_TOKEN', getenv('TELEGRAM_BOT_TOKEN') ?: '');
 define('TELEGRAM_WEBHOOK_SECRET', getenv('TELEGRAM_WEBHOOK_SECRET') ?: '');
+define('TELEGRAM_ALERT_CHAT_ID', getenv('TELEGRAM_ALERT_CHAT_ID') ?: '');
+define('CRON_SECRET', getenv('CRON_SECRET') ?: '');
 define('ANTHROPIC_API_KEY', getenv('ANTHROPIC_API_KEY') ?: '');
 
 try {
