@@ -11,24 +11,49 @@ $batch = $_SESSION['subscription_renewal_batch'] ?? [];
 unset($_SESSION['subscription_renewal_batch']);
 
 $updated = 0;
+$inserted = 0;
 $failed = 0;
 
 if (!empty($batch)) {
-    $stmt = $conn->prepare("UPDATE subscriptions SET renewal_date = ?, renewal_amount = ?, vat = ?, total_amount = ?, subscription_revenue = ?, status = 'Yenilendi' WHERE id = ?");
+    $update_stmt = $conn->prepare("UPDATE subscriptions SET renewal_date = ?, renewal_amount = ?, vat = ?, total_amount = ?, subscription_revenue = ?, status = 'Yenilendi' WHERE id = ?");
+    $insert_stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, cycle, initial_sale_date, renewal_date, renewal_amount, vat, total_amount, subscription_revenue, status) VALUES (?, ?, ?, 'product', ?, ?, 1, ?, ?, ?, ?, ?, ?, 'Yenilendi')");
+
     foreach ($batch as $row) {
-        $stmt->bind_param(
-            "sddddi",
-            $row['renewal_date'],
-            $row['renewal_amount'],
-            $row['vat'],
-            $row['total_amount'],
-            $row['subscription_revenue'],
-            $row['sub_id']
-        );
-        if ($stmt->execute()) {
-            $updated++;
+        if ($row['action'] === 'update') {
+            $update_stmt->bind_param(
+                "sddddi",
+                $row['renewal_date'],
+                $row['renewal_amount'],
+                $row['vat'],
+                $row['total_amount'],
+                $row['subscription_revenue'],
+                $row['sub_id']
+            );
+            if ($update_stmt->execute()) {
+                $updated++;
+            } else {
+                $failed++;
+            }
         } else {
-            $failed++;
+            $insert_stmt->bind_param(
+                "iiissssdddd",
+                $row['sale_id'],
+                $row['customer_id'],
+                $row['product_id'],
+                $row['item_name'],
+                $row['imei'],
+                $row['initial_sale_date'],
+                $row['renewal_date'],
+                $row['renewal_amount'],
+                $row['vat'],
+                $row['total_amount'],
+                $row['subscription_revenue']
+            );
+            if ($insert_stmt->execute()) {
+                $inserted++;
+            } else {
+                $failed++;
+            }
         }
     }
 }
@@ -53,9 +78,9 @@ if (!empty($batch)) {
         </div>
 
         <div class="alert alert-success">
-            <strong><?php echo $updated; ?></strong> abonelik başarıyla yenilendi.
+            <strong><?php echo $updated; ?></strong> mevcut abonelik yenilendi, <strong><?php echo $inserted; ?></strong> yeni abonelik kaydı oluşturuldu.
             <?php if ($failed > 0): ?>
-                <br><strong style="color:var(--danger);"><?php echo $failed; ?></strong> kayıt güncellenemedi.
+                <br><strong style="color:var(--danger);"><?php echo $failed; ?></strong> kayıt işlenemedi.
             <?php endif; ?>
         </div>
 
