@@ -121,14 +121,44 @@ for ($i = 1; $i < count($excel_data); $i++) {
             $stmt->bind_param("s", $seri_no_clean);
             $stmt->execute();
             $sub = $stmt->get_result()->fetch_assoc();
-            if (!$sub) {
-                $row['error'] = 'İptal - CRM\'de bu IMEI için abonelik kaydı yok, işlem yapılmadı';
-            } else {
+            if ($sub) {
                 $row['match'] = [
                     'action' => 'cancel',
                     'sub_id' => $sub['id'],
                     'old_status' => $sub['status'],
                 ];
+            } else {
+                // Abonelik kaydi yok - products'ta durumuna bak
+                $pstmt = $conn->prepare("SELECT id, model, status FROM products WHERE REPLACE(REPLACE(REPLACE(REPLACE(TRIM(imei_number),' ',''),CHAR(13),''),CHAR(10),''),CHAR(9),'') = ?");
+                $pstmt->bind_param("s", $seri_no_clean);
+                $pstmt->execute();
+                $prod = $pstmt->get_result()->fetch_assoc();
+
+                if (!$prod) {
+                    $row['error'] = 'İptal - bu IMEI ne aboneliklerde ne ürünlerde bulunamadı';
+                } elseif ($prod['status'] === 'Stokta') {
+                    $row['error'] = 'TUTARSIZLIK: Bu IMEI stokta görünüyor (hiç satılmamış) ama İptal olarak işaretlenmiş - kontrol et';
+                } else {
+                    $spstmt = $conn->prepare("SELECT sp.sale_id, s.customer_id, s.sale_date FROM sale_products sp INNER JOIN sales s ON sp.sale_id = s.id WHERE sp.product_id = ? ORDER BY s.sale_date DESC LIMIT 1");
+                    $spstmt->bind_param("i", $prod['id']);
+                    $spstmt->execute();
+                    $sp = $spstmt->get_result()->fetch_assoc();
+
+                    if (!$sp) {
+                        $row['error'] = 'İptal - IMEI satılmış görünüyor ama satış kaydı bulunamadı';
+                    } else {
+                        $row['match'] = [
+                            'action' => 'cancel_insert',
+                            'sub_id' => null,
+                            'customer_id' => $sp['customer_id'],
+                            'product_id' => $prod['id'],
+                            'sale_id' => $sp['sale_id'],
+                            'item_name' => $prod['model'],
+                            'imei' => $seri_no_clean,
+                            'initial_sale_date' => $sp['sale_date'],
+                        ];
+                    }
+                }
             }
         }
     } elseif (!$row['excluded']) {
@@ -248,6 +278,16 @@ foreach ($rows as $r) {
                 'action' => 'cancel',
                 'sub_id' => $m['sub_id'],
             ];
+        } elseif ($m['action'] === 'cancel_insert') {
+            $to_apply[] = [
+                'action' => 'cancel_insert',
+                'customer_id' => $m['customer_id'],
+                'product_id' => $m['product_id'],
+                'sale_id' => $m['sale_id'],
+                'item_name' => $m['item_name'],
+                'imei' => $m['imei'],
+                'initial_sale_date' => $m['initial_sale_date'],
+            ];
         } else {
             $to_apply[] = [
                 'action' => $m['action'],
@@ -271,9 +311,10 @@ $_SESSION['subscription_renewal_batch'] = $to_apply;
 
 $count_excluded = count(array_filter($rows, fn($r) => $r['excluded']));
 $count_error = count(array_filter($rows, fn($r) => !$r['excluded'] && $r['error'] !== ''));
-$count_cancel = count(array_filter($to_apply, fn($x) => $x['action'] === 'cancel'));
-$count_ok = count(array_filter($to_apply, fn($x) => $x['action'] !== 'cancel'));
-$total_revenue = array_sum(array_column(array_filter($to_apply, fn($x) => $x['action'] !== 'cancel'), 'subscription_revenue'));
+$is_cancel_action = fn($x) => in_array($x['action'], ['cancel', 'cancel_insert'], true);
+$count_cancel = count(array_filter($to_apply, $is_cancel_action));
+$count_ok = count(array_filter($to_apply, fn($x) => !$is_cancel_action($x)));
+$total_revenue = array_sum(array_column(array_filter($to_apply, fn($x) => !$is_cancel_action($x)), 'subscription_revenue'));
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -354,7 +395,7 @@ $total_revenue = array_sum(array_column(array_filter($to_apply, fn($x) => $x['ac
                                     <span class="badge badge-orange">Hariç</span>
                                 <?php elseif ($r['error'] !== ''): ?>
                                     <span class="badge badge-red">Hata</span>
-                                <?php elseif ($r['match'] && $r['match']['action'] === 'cancel'): ?>
+                                <?php elseif ($r['match'] && in_array($r['match']['action'], ['cancel', 'cancel_insert'], true)): ?>
                                     <span class="badge badge-gray">İptal Edilecek</span>
                                 <?php elseif ($r['match'] && $r['match']['action'] === 'insert'): ?>
                                     <span class="badge badge-blue">Yeni Kayıt</span>
@@ -365,7 +406,7 @@ $total_revenue = array_sum(array_column(array_filter($to_apply, fn($x) => $x['ac
                             <td><?php echo htmlspecialchars($r['musteri']); ?></td>
                             <td><?php echo htmlspecialchars($r['seri_no']); ?></td>
                             <td><?php echo htmlspecialchars($r['sure_raw']); ?></td>
-                            <?php if ($r['match'] && $r['match']['action'] === 'cancel'): ?>
+                            <?php if ($r['match'] && in_array($r['match']['action'], ['cancel', 'cancel_insert'], true)): ?>
                                 <td>-</td>
                                 <td>-</td>
                                 <td><?php echo htmlspecialchars($r['liste_fiyat']); ?> / <?php echo htmlspecialchars($r['indirimli_fiyat'] ?: '-'); ?></td>

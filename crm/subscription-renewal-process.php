@@ -19,11 +19,28 @@ if (!empty($batch)) {
     $update_stmt = $conn->prepare("UPDATE subscriptions SET renewal_date = ?, renewal_amount = ?, vat = ?, total_amount = ?, subscription_revenue = ?, status = 'Yenilendi' WHERE id = ?");
     $insert_stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, cycle, initial_sale_date, renewal_date, renewal_amount, vat, total_amount, subscription_revenue, status) VALUES (?, ?, ?, 'product', ?, ?, 1, ?, ?, ?, ?, ?, ?, 'Yenilendi')");
     $cancel_stmt = $conn->prepare("UPDATE subscriptions SET status = 'İptal' WHERE id = ?");
+    $cancel_insert_stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, cycle, initial_sale_date, renewal_date, renewal_amount, vat, total_amount, subscription_revenue, status) VALUES (?, ?, ?, 'product', ?, ?, 1, ?, ?, 0, 0, 0, 0, 'İptal')");
 
     foreach ($batch as $row) {
         if ($row['action'] === 'cancel') {
             $cancel_stmt->bind_param("i", $row['sub_id']);
             if ($cancel_stmt->execute()) {
+                $cancelled++;
+            } else {
+                $failed++;
+            }
+        } elseif ($row['action'] === 'cancel_insert') {
+            $cancel_insert_stmt->bind_param(
+                "iiissss",
+                $row['sale_id'],
+                $row['customer_id'],
+                $row['product_id'],
+                $row['item_name'],
+                $row['imei'],
+                $row['initial_sale_date'],
+                $row['initial_sale_date']
+            );
+            if ($cancel_insert_stmt->execute()) {
                 $cancelled++;
             } else {
                 $failed++;
