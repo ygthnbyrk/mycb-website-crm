@@ -108,6 +108,9 @@ for ($i = 1; $i < count($excel_data); $i++) {
             $res = $stmt->get_result();
             if ($res->num_rows === 0) {
                 $row['error'] = 'CRM aboneliklerinde bu Seri No bulunamadı';
+                if ($i <= 3) {
+                    $row['error'] .= ' [DEBUG hex=' . bin2hex($seri_no) . ' clean=' . $seri_no_clean . ' cleanhex=' . bin2hex($seri_no_clean) . ']';
+                }
             } else {
                 $sub = $res->fetch_assoc();
 
