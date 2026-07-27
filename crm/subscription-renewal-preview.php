@@ -96,12 +96,14 @@ for ($i = 1; $i < count($excel_data); $i++) {
         }
     }
 
+    $seri_no_clean = preg_replace('/[^0-9A-Za-z]/', '', $seri_no);
+
     if (!$row['excluded']) {
-        if ($seri_no === '') {
+        if ($seri_no_clean === '') {
             $row['error'] = 'Seri No boş';
         } else {
-            $stmt = $conn->prepare("SELECT * FROM subscriptions WHERE item_detail = ? AND item_type = 'product'");
-            $stmt->bind_param("s", $seri_no);
+            $stmt = $conn->prepare("SELECT * FROM subscriptions WHERE REPLACE(REPLACE(REPLACE(REPLACE(TRIM(item_detail),' ',''),CHAR(13),''),CHAR(10),''),CHAR(9),'') = ? AND item_type = 'product'");
+            $stmt->bind_param("s", $seri_no_clean);
             $stmt->execute();
             $res = $stmt->get_result();
             if ($res->num_rows === 0) {
