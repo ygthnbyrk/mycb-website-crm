@@ -16,6 +16,7 @@ $nav_items = [
     ['page' => 'sales-list',         'href' => 'sales-list.php',         'icon' => 'list',    'label' => 'Satış Listesi'],
     ['page' => 'bulk-sales-upload',  'href' => 'bulk-sales-upload.php',  'icon' => 'upload',  'label' => 'Toplu Satış Yükle'],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
+    ['page' => 'subscription-renewal', 'href' => 'subscription-renewal-upload.php', 'icon' => 'upload', 'label' => 'Abonelik Yenileme'],
 ];
 
 if (($_SESSION['user_role'] ?? '') === 'admin') {
