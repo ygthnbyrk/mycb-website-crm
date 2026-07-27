@@ -93,13 +93,15 @@ $params = [];
 $types = '';
 
 if (!empty($search)) {
-    $count_sql .= " AND (c.name LIKE ? OR 
-                        s.id IN (SELECT sale_id FROM sale_products WHERE imei_number LIKE ? OR plate LIKE ?))";
+    $count_sql .= " AND (c.name LIKE ? OR
+                        s.id IN (SELECT sale_id FROM sale_products WHERE imei_number LIKE ? OR plate LIKE ?) OR
+                        s.id IN (SELECT sale_id FROM sale_simcards WHERE phone_number LIKE ?))";
     $search_param = "%$search%";
     $params[] = $search_param;
     $params[] = $search_param;
     $params[] = $search_param;
-    $types .= 'sss';
+    $params[] = $search_param;
+    $types .= 'ssss';
 }
 
 if (!empty($year)) {
@@ -133,13 +135,15 @@ $params = [];
 $types = '';
 
 if (!empty($search)) {
-    $sql .= " AND (c.name LIKE ? OR 
-                   s.id IN (SELECT sale_id FROM sale_products WHERE imei_number LIKE ? OR plate LIKE ?))";
+    $sql .= " AND (c.name LIKE ? OR
+                   s.id IN (SELECT sale_id FROM sale_products WHERE imei_number LIKE ? OR plate LIKE ?) OR
+                   s.id IN (SELECT sale_id FROM sale_simcards WHERE phone_number LIKE ?))";
     $search_param = "%$search%";
     $params[] = $search_param;
     $params[] = $search_param;
     $params[] = $search_param;
-    $types .= 'sss';
+    $params[] = $search_param;
+    $types .= 'ssss';
 }
 
 if (!empty($year)) {
