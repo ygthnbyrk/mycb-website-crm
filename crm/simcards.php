@@ -15,6 +15,7 @@ $user_name = $_SESSION['user_name'];
 $search = $_GET['search'] ?? '';
 $filter_company = $_GET['company'] ?? '';
 $filter_operator = $_GET['operator'] ?? '';
+$status_filter = $_GET['status'] ?? '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $per_page = 25;
 $offset = ($page - 1) * $per_page;
@@ -55,6 +56,12 @@ if (!empty($filter_company)) {
 if (!empty($filter_operator)) {
     $where_conditions[] = "operator = ?";
     $params[] = $filter_operator;
+    $types .= 's';
+}
+
+if ($status_filter === 'Stokta' || $status_filter === 'Satıldı') {
+    $where_conditions[] = "status = ?";
+    $params[] = $status_filter;
     $types .= 's';
 }
 
@@ -135,17 +142,26 @@ $stmt->close();
             </div>
         </div>
 
+        <!-- Durum Filtresi -->
+        <div class="filter-row" style="margin-bottom: 12px;">
+            <?php $sq = http_build_query(array_filter(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator])); ?>
+            <a href="?<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
+            <a href="?status=Stokta<?php echo $sq ? '&'.$sq : ''; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
+            <a href="?status=Satıldı<?php echo $sq ? '&'.$sq : ''; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
+        </div>
+
         <!-- Aksiyon Çubuğu -->
         <div class="action-bar">
             <form method="GET" style="width: 100%;">
+                <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
                 <!-- Arama ve Filtreler -->
                 <div class="search-filter-row">
                     <div class="search-box">
-                        <input type="text" name="search" class="search-input" 
-                               placeholder="Telefon numarası ara..." 
+                        <input type="text" name="search" class="search-input"
+                               placeholder="Telefon numarası ara..."
                                value="<?php echo htmlspecialchars($search); ?>">
                     </div>
-                    
+
                     <div class="filter-group">
                         <label>Şirket</label>
                         <select name="company" class="filter-select">
@@ -168,13 +184,13 @@ $stmt->close();
 
                     <button type="submit" class="btn btn-primary"><?php echo icon('filter'); ?> Filtrele</button>
 
-                    <?php if($search || $filter_company || $filter_operator): ?>
+                    <?php if($search || $filter_company || $filter_operator || $status_filter): ?>
                         <a href="simcards.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                     <?php endif; ?>
                 </div>
 
                 <!-- Aktif Filtreler -->
-                <?php if($search || $filter_company || $filter_operator): ?>
+                <?php if($search || $filter_company || $filter_operator || $status_filter): ?>
                     <div class="active-filters">
                         <strong style="color: var(--text-secondary); font-size: 13px;">Aktif Filtreler:</strong>
                         <?php if($search): ?>
@@ -195,6 +211,12 @@ $stmt->close();
                                 <span class="remove" onclick="removeFilter('operator')">×</span>
                             </div>
                         <?php endif; ?>
+                        <?php if($status_filter): ?>
+                            <div class="filter-tag">
+                                <?php echo htmlspecialchars($status_filter); ?>
+                                <span class="remove" onclick="removeFilter('status')">×</span>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </form>
@@ -202,7 +224,7 @@ $stmt->close();
             <!-- Butonlar -->
             <div class="action-buttons" style="margin-top: 15px;">
                 <button onclick="openModal()" class="btn btn-primary"><?php echo icon('plus'); ?> Sim Kart Ekle</button>
-                <a href="export-simcards.php?<?php echo http_build_query(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator]); ?>" class="btn btn-secondary">Excel İndir</a>
+                <a href="export-simcards.php?<?php echo http_build_query(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator, 'status' => $status_filter]); ?>" class="btn btn-secondary">Excel İndir</a>
                 <a href="sample-simcards-template.php" class="btn btn-secondary">Şablon İndir</a>
                 <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary"><?php echo icon('upload'); ?> Excel Yükle</button>
                 <form id="importForm" method="POST" action="import-simcards.php" enctype="multipart/form-data" style="display: none;">
@@ -254,7 +276,7 @@ $stmt->close();
                         <tr>
                             <td colspan="7" class="no-data">
                                 <?php
-                                if($search || $filter_company || $filter_operator) {
+                                if($search || $filter_company || $filter_operator || $status_filter) {
                                     echo "Filtrelere uygun sonuç bulunamadı.";
                                 } else {
                                     echo "Henüz sim kart eklenmemiş.";
@@ -272,7 +294,8 @@ $stmt->close();
         echo renderPagination($page, $total_pages, 'simcards.php', [
             'search' => $search,
             'company' => $filter_company,
-            'operator' => $filter_operator
+            'operator' => $filter_operator,
+            'status' => $status_filter
         ]);
         ?>
     </div>

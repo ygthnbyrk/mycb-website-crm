@@ -11,8 +11,9 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
-// Arama ve Sayfalama
+// Arama, Durum Filtresi ve Sayfalama
 $search = $_GET['search'] ?? '';
+$status_filter = $_GET['status'] ?? '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $per_page = 25;
 $offset = ($page - 1) * $per_page;
@@ -30,15 +31,32 @@ $kpi_stmt->execute();
 $kpi_result = $kpi_stmt->get_result()->fetch_assoc();
 $kpi_stmt->close();
 
-// Arama ile toplam ürün sayısı
+// Dinamik WHERE (arama + durum filtresi)
+$where_conditions = [];
+$params = [];
+$types = '';
+
 if (!empty($search)) {
-    $count_sql = "SELECT COUNT(*) as total FROM products WHERE product_name LIKE ? OR imei_number LIKE ?";
-    $stmt = $conn->prepare($count_sql);
+    $where_conditions[] = "(product_name LIKE ? OR imei_number LIKE ?)";
     $search_param = "%$search%";
-    $stmt->bind_param("ss", $search_param, $search_param);
-} else {
-    $count_sql = "SELECT COUNT(*) as total FROM products";
-    $stmt = $conn->prepare($count_sql);
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $types .= 'ss';
+}
+
+if ($status_filter === 'Stokta' || $status_filter === 'Satıldı') {
+    $where_conditions[] = "status = ?";
+    $params[] = $status_filter;
+    $types .= 's';
+}
+
+$where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
+// Toplam sayı
+$count_sql = "SELECT COUNT(*) as total FROM products $where_clause";
+$stmt = $conn->prepare($count_sql);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
 }
 $stmt->execute();
 $total_products = $stmt->get_result()->fetch_assoc()['total'];
@@ -46,16 +64,13 @@ $total_pages = ceil($total_products / $per_page);
 $stmt->close();
 
 // Ürünleri çek
-if (!empty($search)) {
-    $sql = "SELECT * FROM products WHERE product_name LIKE ? OR imei_number LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?";
-    $stmt = $conn->prepare($sql);
-    $search_param = "%$search%";
-    $stmt->bind_param("ssii", $search_param, $search_param, $per_page, $offset);
-} else {
-    $sql = "SELECT * FROM products ORDER BY created_at DESC LIMIT ? OFFSET ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ii", $per_page, $offset);
-}
+$sql = "SELECT * FROM products $where_clause ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$params[] = $per_page;
+$params[] = $offset;
+$types .= 'ii';
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $products = $stmt->get_result();
 $stmt->close();
@@ -110,14 +125,23 @@ $stmt->close();
             </div>
         </div>
 
+        <!-- Durum Filtresi -->
+        <div class="filter-row" style="margin-bottom: 12px;">
+            <?php $sq = $search ? '&search=' . urlencode($search) : ''; ?>
+            <a href="?status=<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
+            <a href="?status=Stokta<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
+            <a href="?status=Satıldı<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
+        </div>
+
         <!-- Aksiyon Çubuğu -->
         <div class="action-bar">
             <div class="search-box">
                 <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+                    <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
                     <input type="text" name="search" class="search-input" placeholder="Ürün adı veya IMEI ara..." value="<?php echo htmlspecialchars($search); ?>">
                     <button type="submit" class="btn btn-primary"><?php echo icon('search'); ?> Ara</button>
                     <?php if($search): ?>
-                        <a href="products.php" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
+                        <a href="?status=<?php echo htmlspecialchars($status_filter); ?>" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                     <?php endif; ?>
                 </form>
             </div>
@@ -172,7 +196,7 @@ $stmt->close();
                     <?php else: ?>
                         <tr>
                             <td colspan="5" class="no-data">
-                                <?php echo $search ? "Arama sonucu bulunamadı." : "Henüz ürün eklenmemiş."; ?>
+                                <?php echo ($search || $status_filter) ? "Filtrelere uygun sonuç bulunamadı." : "Henüz ürün eklenmemiş."; ?>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -184,7 +208,7 @@ $stmt->close();
         <?php
         echo renderPagination($page, $total_pages, 'products.php', [
             'search' => $search,
-            'status' => isset($status_filter) ? $status_filter : ''
+            'status' => $status_filter
         ]);
         ?>
     </div>

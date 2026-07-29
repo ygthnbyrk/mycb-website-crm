@@ -621,8 +621,19 @@ table tbody tr:last-child td { border-bottom: none; }
 .required { color: var(--danger); }
 
 /* Gelişmiş filtre satırı (etiketli seçim kutuları + aktif filtre etiketleri) */
+.search-filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 170px; }
 .filter-group label { font-size: 12.5px; color: var(--text-secondary); font-weight: 600; }
+.filter-select {
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    min-width: 170px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+.filter-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .active-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
 .filter-tag {
     background: var(--accent-soft);
