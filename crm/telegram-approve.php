@@ -145,15 +145,35 @@ try {
     }
 
     // --- Satış oluştur (create-sale.php / save-sale.php ile aynı mantık) ---
+    // Aynı müşteri için aynı tarihte, bu Telegram akışıyla daha önce onaylanmış bir satış
+    // varsa (örn. aynı gün birden fazla cihaz/sim fotoğrafı geldiyse) yeni satış açmak
+    // yerine o satışa ekleriz - sales-list.php'de tek satır altında birleşik görünsün diye.
     $subtotal = $product_price + $simcard_price;
     $vat_amount = $subtotal * 0.20;
     $total = $subtotal + $vat_amount;
 
-    $stmt = $conn->prepare("INSERT INTO sales (sale_date, customer_id, subtotal, vat, total, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sidddi", $sale_date, $customer_id, $subtotal, $vat_amount, $total, $user_id);
-    $stmt->execute();
-    $sale_id = $conn->insert_id;
-    $stmt->close();
+    $find_sale_stmt = $conn->prepare("SELECT s.id FROM sales s
+        WHERE s.customer_id = ? AND s.sale_date = ?
+        AND EXISTS (SELECT 1 FROM telegram_pending_matches tpm WHERE tpm.sale_id = s.id)
+        ORDER BY s.id DESC LIMIT 1");
+    $find_sale_stmt->bind_param("is", $customer_id, $sale_date);
+    $find_sale_stmt->execute();
+    $existing_sale = $find_sale_stmt->get_result()->fetch_assoc();
+    $find_sale_stmt->close();
+
+    if ($existing_sale) {
+        $sale_id = $existing_sale['id'];
+        $update_sale_stmt = $conn->prepare("UPDATE sales SET subtotal = subtotal + ?, vat = vat + ?, total = total + ? WHERE id = ?");
+        $update_sale_stmt->bind_param("dddi", $subtotal, $vat_amount, $total, $sale_id);
+        $update_sale_stmt->execute();
+        $update_sale_stmt->close();
+    } else {
+        $stmt = $conn->prepare("INSERT INTO sales (sale_date, customer_id, subtotal, vat, total, created_by) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sidddi", $sale_date, $customer_id, $subtotal, $vat_amount, $total, $user_id);
+        $stmt->execute();
+        $sale_id = $conn->insert_id;
+        $stmt->close();
+    }
 
     $renewal_date = date('Y-m-d', strtotime($sale_date . ' + 24 months'));
 
