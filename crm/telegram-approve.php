@@ -96,9 +96,12 @@ try {
         $stmt->execute();
         $product_id = $conn->insert_id;
         $stmt->close();
+    } elseif ($product_mode === 'none') {
+        $product_price = 0;
     } else {
         throw new Exception('Cihaz bilgisi eksik.');
     }
+    $has_product = $product_mode !== 'none';
 
     // --- Sim kart: mevcut ya da yeni ---
     $simcard_mode = $_POST['simcard_mode'] ?? '';
@@ -140,8 +143,15 @@ try {
         $stmt->execute();
         $simcard_id = $conn->insert_id;
         $stmt->close();
+    } elseif ($simcard_mode === 'none') {
+        $simcard_price = 0;
     } else {
         throw new Exception('Sim kart bilgisi eksik.');
+    }
+    $has_simcard = $simcard_mode !== 'none';
+
+    if (!$has_product && !$has_simcard) {
+        throw new Exception('En az cihaz veya sim karttan biri seçilmeli.');
     }
 
     // --- Satış oluştur (create-sale.php / save-sale.php ile aynı mantık) ---
@@ -177,34 +187,40 @@ try {
 
     $renewal_date = date('Y-m-d', strtotime($sale_date . ' + 24 months'));
 
-    $stmt = $conn->prepare("INSERT INTO sale_products (sale_id, product_id, imei_number, model, price, plate) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("iissds", $sale_id, $product_id, $product_imei, $product_model, $product_price, $plate);
-    $stmt->execute();
-    $stmt->close();
+    if ($has_product) {
+        $stmt = $conn->prepare("INSERT INTO sale_products (sale_id, product_id, imei_number, model, price, plate) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("iissds", $sale_id, $product_id, $product_imei, $product_model, $product_price, $plate);
+        $stmt->execute();
+        $stmt->close();
 
-    $conn->query("UPDATE products SET status = 'Satıldı' WHERE id = " . intval($product_id));
+        $conn->query("UPDATE products SET status = 'Satıldı' WHERE id = " . intval($product_id));
 
-    $stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'product', ?, ?, ?, ?)");
-    $stmt->bind_param("iiissss", $sale_id, $customer_id, $product_id, $product_model, $product_imei, $sale_date, $renewal_date);
-    $stmt->execute();
-    $stmt->close();
+        $stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'product', ?, ?, ?, ?)");
+        $stmt->bind_param("iiissss", $sale_id, $customer_id, $product_id, $product_model, $product_imei, $sale_date, $renewal_date);
+        $stmt->execute();
+        $stmt->close();
+    }
 
-    $stmt = $conn->prepare("INSERT INTO sale_simcards (sale_id, simcard_id, phone_number, operator, price) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("iissd", $sale_id, $simcard_id, $simcard_phone, $simcard_operator, $simcard_price);
-    $stmt->execute();
-    $stmt->close();
+    if ($has_simcard) {
+        $stmt = $conn->prepare("INSERT INTO sale_simcards (sale_id, simcard_id, phone_number, operator, price) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iissd", $sale_id, $simcard_id, $simcard_phone, $simcard_operator, $simcard_price);
+        $stmt->execute();
+        $stmt->close();
 
-    $conn->query("UPDATE simcards SET status = 'Satıldı' WHERE id = " . intval($simcard_id));
+        $conn->query("UPDATE simcards SET status = 'Satıldı' WHERE id = " . intval($simcard_id));
 
-    $stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, simcard_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'simcard', ?, ?, ?, ?)");
-    $stmt->bind_param("iiissss", $sale_id, $customer_id, $simcard_id, $simcard_operator, $simcard_phone, $sale_date, $renewal_date);
-    $stmt->execute();
-    $stmt->close();
+        $stmt = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, simcard_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'simcard', ?, ?, ?, ?)");
+        $stmt->bind_param("iiissss", $sale_id, $customer_id, $simcard_id, $simcard_operator, $simcard_phone, $sale_date, $renewal_date);
+        $stmt->execute();
+        $stmt->close();
+    }
 
-    $stmt = $conn->prepare("INSERT INTO sale_mappings (sale_id, product_id, simcard_id, imei_number, phone_number) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("iiiss", $sale_id, $product_id, $simcard_id, $product_imei, $simcard_phone);
-    $stmt->execute();
-    $stmt->close();
+    if ($has_product && $has_simcard) {
+        $stmt = $conn->prepare("INSERT INTO sale_mappings (sale_id, product_id, simcard_id, imei_number, phone_number) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iiiss", $sale_id, $product_id, $simcard_id, $product_imei, $simcard_phone);
+        $stmt->execute();
+        $stmt->close();
+    }
 
     $stmt = $conn->prepare("UPDATE telegram_pending_matches SET status = 'approved', sale_id = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?");
     $stmt->bind_param("iii", $sale_id, $user_id, $pending_id);

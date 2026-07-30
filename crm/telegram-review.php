@@ -80,6 +80,12 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
             $has_photo2 = !empty($row['photo_2_file_id']);
             $product_matched = !empty($row['matched_product_id']);
             $simcard_matched = !empty($row['matched_simcard_id']);
+            // OCR hiç cihaz/sim tespit etmediyse (örn. tek sim kart fotoğrafı gönderildiyse)
+            // "Yeni oluştur"u boş alanlarla zorlamak yerine baştan "Yok" seçili gelsin.
+            $product_ocr_empty = empty($row['ocr_imei']) && empty($row['ocr_serial']) && empty($row['ocr_model_guess']);
+            $simcard_ocr_empty = empty($row['ocr_phone_number']) && empty($row['ocr_operator_guess']);
+            $product_default_none = !$product_matched && $product_ocr_empty;
+            $simcard_default_none = !$simcard_matched && $simcard_ocr_empty;
         ?>
         <div class="card tg-card">
             <div class="card-header">
@@ -143,7 +149,8 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                         <strong>Cihaz</strong>
                         <div class="tg-toggle">
                             <label><input type="radio" name="product_mode" value="existing" <?php echo $product_matched ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'product', 'existing')"> Mevcut cihazı kullan</label>
-                            <label><input type="radio" name="product_mode" value="new" <?php echo !$product_matched ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'product', 'new')"> Yeni cihaz oluştur</label>
+                            <label><input type="radio" name="product_mode" value="new" <?php echo (!$product_matched && !$product_default_none) ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'product', 'new')"> Yeni cihaz oluştur</label>
+                            <label><input type="radio" name="product_mode" value="none" <?php echo $product_default_none ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'product', 'none')"> Bu satışta cihaz yok</label>
                         </div>
 
                         <div id="product_existing_<?php echo $rid; ?>" class="tg-existing-fields <?php echo $product_matched ? 'show' : ''; ?>" style="position: relative;">
@@ -153,7 +160,7 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                             <div id="product_dropdown_<?php echo $rid; ?>" class="autocomplete-dropdown"></div>
                         </div>
 
-                        <div id="product_new_<?php echo $rid; ?>" class="tg-new-fields <?php echo !$product_matched ? 'show' : ''; ?>">
+                        <div id="product_new_<?php echo $rid; ?>" class="tg-new-fields <?php echo (!$product_matched && !$product_default_none) ? 'show' : ''; ?>">
                             <div class="form-row">
                                 <div class="form-group"><label>Model</label><input type="text" name="p_model" value="<?php echo htmlspecialchars($row['ocr_model_guess'] ?: ''); ?>"></div>
                                 <div class="form-group"><label>IMEI</label><input type="text" name="p_imei" value="<?php echo htmlspecialchars($row['ocr_imei'] ?: ''); ?>"></div>
@@ -175,7 +182,7 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="product_price_group_<?php echo $rid; ?>" style="<?php echo $product_default_none ? 'display:none;' : ''; ?>">
                             <label>Satış Fiyatı - Cihaz (₺)</label>
                             <input type="number" step="0.01" id="product_price_<?php echo $rid; ?>" name="product_price" value="<?php echo $product_matched ? htmlspecialchars($row['mp_total_cost']) : '0'; ?>">
                         </div>
@@ -185,7 +192,8 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                         <strong>Sim Kart</strong>
                         <div class="tg-toggle">
                             <label><input type="radio" name="simcard_mode" value="existing" <?php echo $simcard_matched ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'simcard', 'existing')"> Mevcut sim kartı kullan</label>
-                            <label><input type="radio" name="simcard_mode" value="new" <?php echo !$simcard_matched ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'simcard', 'new')"> Yeni sim kart oluştur</label>
+                            <label><input type="radio" name="simcard_mode" value="new" <?php echo (!$simcard_matched && !$simcard_default_none) ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'simcard', 'new')"> Yeni sim kart oluştur</label>
+                            <label><input type="radio" name="simcard_mode" value="none" <?php echo $simcard_default_none ? 'checked' : ''; ?> onchange="tgToggle(<?php echo $rid; ?>, 'simcard', 'none')"> Bu satışta sim kart yok</label>
                         </div>
 
                         <div id="simcard_existing_<?php echo $rid; ?>" class="tg-existing-fields <?php echo $simcard_matched ? 'show' : ''; ?>" style="position: relative;">
@@ -195,7 +203,7 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                             <div id="simcard_dropdown_<?php echo $rid; ?>" class="autocomplete-dropdown"></div>
                         </div>
 
-                        <div id="simcard_new_<?php echo $rid; ?>" class="tg-new-fields <?php echo !$simcard_matched ? 'show' : ''; ?>">
+                        <div id="simcard_new_<?php echo $rid; ?>" class="tg-new-fields <?php echo (!$simcard_matched && !$simcard_default_none) ? 'show' : ''; ?>">
                             <div class="form-row">
                                 <div class="form-group"><label>Telefon Numarası</label><input type="text" name="s_phone" value="<?php echo htmlspecialchars($row['ocr_phone_number'] ?: ''); ?>"></div>
                                 <div class="form-group">
@@ -229,7 +237,7 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
                             <div class="form-group"><label>Maliyet (₺)</label><input type="number" step="0.01" name="s_cost_price" value="0"></div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" id="simcard_price_group_<?php echo $rid; ?>" style="<?php echo $simcard_default_none ? 'display:none;' : ''; ?>">
                             <label>Satış Fiyatı - Sim (₺)</label>
                             <input type="number" step="0.01" id="simcard_price_<?php echo $rid; ?>" name="simcard_price" value="<?php echo $simcard_matched ? htmlspecialchars($row['ms_total_cost']) : '0'; ?>">
                         </div>
@@ -366,6 +374,8 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
         function tgToggle(rid, kind, mode) {
             document.getElementById(kind + '_existing_' + rid).classList.toggle('show', mode === 'existing');
             document.getElementById(kind + '_new_' + rid).classList.toggle('show', mode === 'new');
+            const priceGroup = document.getElementById(kind + '_price_group_' + rid);
+            if (priceGroup) priceGroup.style.display = (mode === 'none') ? 'none' : '';
         }
 
         function escapeHtml(text) {
