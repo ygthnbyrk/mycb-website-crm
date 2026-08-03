@@ -98,7 +98,10 @@ try {
         if (empty($musteri_adi)) {
             $row_errors[] = "Müşteri adı boş olamaz";
         } else {
-            $stmt = $conn->prepare("SELECT id FROM customers WHERE name LIKE ?");
+            // Aynı isimde birden fazla müşteri varsa (gerçek isim çakışması ya da
+            // yanlışlıkla açılmış ikinci kayıt), mevcut satış geçmişi olanı tercih et.
+            $stmt = $conn->prepare("SELECT c.id FROM customers c WHERE c.name LIKE ?
+                ORDER BY (SELECT COUNT(*) FROM sales s WHERE s.customer_id = c.id) DESC, c.id ASC");
             if ($stmt === false) {
                 throw new Exception("Veritabanı hatası: " . $conn->error);
             }
