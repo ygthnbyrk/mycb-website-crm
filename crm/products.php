@@ -20,9 +20,10 @@ $offset = ($page - 1) * $per_page;
 
 // KPI'lar
 $kpi_stmt = $conn->prepare("
-    SELECT 
+    SELECT
         COUNT(*) as total_products,
         SUM(CASE WHEN status = 'Stokta' THEN 1 ELSE 0 END) as stock_products,
+        SUM(CASE WHEN status = 'Pasif' THEN 1 ELSE 0 END) as passive_products,
         SUM(CASE WHEN status = 'Satıldı' THEN 1 ELSE 0 END) as sold_products,
         SUM(CASE WHEN status = 'Stokta' THEN total_cost ELSE 0 END) as stock_value
     FROM products
@@ -44,7 +45,7 @@ if (!empty($search)) {
     $types .= 'ss';
 }
 
-if ($status_filter === 'Stokta' || $status_filter === 'Satıldı') {
+if (in_array($status_filter, ['Stokta', 'Pasif', 'Satıldı'], true)) {
     $where_conditions[] = "status = ?";
     $params[] = $status_filter;
     $types .= 's';
@@ -116,6 +117,10 @@ $stmt->close();
                 <p>Stokta</p>
             </div>
             <div class="stat-box">
+                <h3><?php echo $kpi_result['passive_products']; ?></h3>
+                <p>Pasif</p>
+            </div>
+            <div class="stat-box">
                 <h3><?php echo $kpi_result['sold_products']; ?></h3>
                 <p>Satıldı</p>
             </div>
@@ -130,6 +135,7 @@ $stmt->close();
             <?php $sq = $search ? '&search=' . urlencode($search) : ''; ?>
             <a href="?status=<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
             <a href="?status=Stokta<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
+            <a href="?status=Pasif<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Pasif' ? 'active' : ''; ?>">Pasif</a>
             <a href="?status=Satıldı<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
         </div>
 
@@ -181,6 +187,8 @@ $stmt->close();
                                 <td>
                                     <?php if($product['status'] == 'Stokta'): ?>
                                         <span class="badge badge-green">Stokta</span>
+                                    <?php elseif($product['status'] == 'Pasif'): ?>
+                                        <span class="badge badge-orange">Pasif</span>
                                     <?php else: ?>
                                         <span class="badge badge-red">Satıldı</span>
                                     <?php endif; ?>
@@ -188,6 +196,11 @@ $stmt->close();
                                 <td style="text-align: center;">
                                     <div class="action-btns">
                                         <button onclick="editProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                        <?php if ($product['status'] === 'Stokta'): ?>
+                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Pasif')" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
+                                        <?php elseif ($product['status'] === 'Pasif'): ?>
+                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Stokta')" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
+                                        <?php endif; ?>
                                         <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
                                     </div>
                                 </td>
@@ -363,6 +376,15 @@ $stmt->close();
         function deleteProduct(id) {
             if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
                 window.location.href = 'delete-product.php?id=' + encodeURIComponent(id);
+            }
+        }
+
+        function toggleProductStatus(id, status) {
+            const msg = status === 'Pasif'
+                ? 'Bu ürünü pasife almak istediğinizden emin misiniz? Stok listesinde görünmeyecek.'
+                : 'Bu ürünü tekrar stoğa almak istediğinizden emin misiniz?';
+            if (confirm(msg)) {
+                window.location.href = 'toggle-product-status.php?id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status);
             }
         }
 

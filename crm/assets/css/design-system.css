@@ -580,6 +580,10 @@ table tbody tr:last-child td { border-bottom: none; }
 .btn-edit:hover { background: #cffafe; }
 .btn-delete { background: var(--danger-soft); color: var(--danger); }
 .btn-delete:hover { background: #fde2e2; }
+.btn-pause { background: var(--warning-soft); color: var(--warning); }
+.btn-pause:hover { background: #fef3c7; }
+.btn-activate { background: var(--success-soft); color: var(--success); }
+.btn-activate:hover { background: #d1fae5; }
 
 /* Sayfalama */
 .pagination { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; flex-wrap: wrap; }

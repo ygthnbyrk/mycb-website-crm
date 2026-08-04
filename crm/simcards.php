@@ -59,7 +59,7 @@ if (!empty($filter_operator)) {
     $types .= 's';
 }
 
-if ($status_filter === 'Stokta' || $status_filter === 'Satıldı') {
+if (in_array($status_filter, ['Stokta', 'Pasif', 'Satıldı'], true)) {
     $where_conditions[] = "status = ?";
     $params[] = $status_filter;
     $types .= 's';
@@ -147,6 +147,7 @@ $stmt->close();
             <?php $sq = http_build_query(array_filter(['search' => $search, 'company' => $filter_company, 'operator' => $filter_operator])); ?>
             <a href="?<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
             <a href="?status=Stokta<?php echo $sq ? '&'.$sq : ''; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
+            <a href="?status=Pasif<?php echo $sq ? '&'.$sq : ''; ?>" class="btn btn-light <?php echo $status_filter === 'Pasif' ? 'active' : ''; ?>">Pasif</a>
             <a href="?status=Satıldı<?php echo $sq ? '&'.$sq : ''; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
         </div>
 
@@ -267,6 +268,11 @@ $stmt->close();
                                 <td style="text-align: center;">
                                     <div class="action-btns">
                                         <button onclick="editSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                        <?php if ($sim['status'] === 'Stokta'): ?>
+                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Pasif')" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
+                                        <?php elseif ($sim['status'] === 'Pasif'): ?>
+                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Stokta')" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
+                                        <?php endif; ?>
                                         <button onclick="deleteSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
                                     </div>
                                 </td>
@@ -445,6 +451,15 @@ $stmt->close();
         function deleteSimcard(id) {
             if(confirm('Bu sim kartı silmek istediğinizden emin misiniz?')) {
                 window.location.href = 'delete-simcard.php?id=' + id;
+            }
+        }
+
+        function toggleSimcardStatus(id, status) {
+            const msg = status === 'Pasif'
+                ? 'Bu sim kartı pasife almak istediğinizden emin misiniz? Stok listesinde görünmeyecek.'
+                : 'Bu sim kartı tekrar stoğa almak istediğinizden emin misiniz?';
+            if (confirm(msg)) {
+                window.location.href = 'toggle-simcard-status.php?id=' + id + '&status=' + encodeURIComponent(status);
             }
         }
 
