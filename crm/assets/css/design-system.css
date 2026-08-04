@@ -192,7 +192,11 @@ svg { width: 1em; height: 1em; vertical-align: -0.125em; flex-shrink: 0; }
     padding: 20px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 }
+
+a.stat-card { text-decoration: none; color: inherit; display: block; }
+a.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--accent); }
 
 .stat-card .icon {
     width: 36px;
