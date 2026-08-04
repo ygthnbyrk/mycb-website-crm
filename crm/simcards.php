@@ -28,7 +28,6 @@ $return_qs = http_build_query(array_filter([
     'status' => $status_filter,
     'page' => $page > 1 ? $page : '',
 ]));
-$return_qs_js = json_encode($return_qs, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
 
 // KPI'lar
 $kpi_stmt = $conn->prepare("
@@ -279,9 +278,9 @@ $stmt->close();
                                     <div class="action-btns">
                                         <button onclick="editSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
                                         <?php if ($sim['status'] === 'Stokta'): ?>
-                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Pasif', <?php echo $return_qs_js; ?>)" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
+                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Pasif', '<?php echo $return_qs; ?>')" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
                                         <?php elseif ($sim['status'] === 'Pasif'): ?>
-                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Stokta', <?php echo $return_qs_js; ?>)" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
+                                            <button onclick="toggleSimcardStatus(<?php echo $sim['id']; ?>, 'Stokta', '<?php echo $return_qs; ?>')" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
                                         <?php endif; ?>
                                         <button onclick="deleteSimcard(<?php echo $sim['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
                                     </div>
