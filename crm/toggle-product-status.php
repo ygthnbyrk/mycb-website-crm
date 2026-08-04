@@ -9,6 +9,13 @@ if (!isset($_SESSION['user_id'])) {
 $id = intval($_GET['id'] ?? 0);
 $status = $_GET['status'] ?? '';
 
+// Toggle öncesi hangi filtre/sayfadaydıysa oraya geri dönmek için
+$return = $_GET['return'] ?? '';
+if ($return !== '' && !preg_match('/^[A-Za-z0-9=&%.+_\-]*$/', $return)) {
+    $return = '';
+}
+$redirect = 'products.php' . ($return !== '' ? '?' . $return : '');
+
 // Bu hızlı işlem sadece Stokta <-> Pasif geçişi içindir; satış kaydı gerektiren
 // "Satıldı" durumu buradan değil, satış akışından yönetilir.
 if ($id > 0 && in_array($status, ['Stokta', 'Pasif'], true)) {
@@ -25,6 +32,6 @@ if ($id > 0 && in_array($status, ['Stokta', 'Pasif'], true)) {
     $_SESSION['error'] = 'Geçersiz istek.';
 }
 
-header('Location: products.php');
+header('Location: ' . $redirect);
 exit;
 ?>

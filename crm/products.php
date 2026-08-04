@@ -18,6 +18,14 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $per_page = 25;
 $offset = ($page - 1) * $per_page;
 
+// Sayfadaki aktif filtreleri korumak için: Pasif/Aktif toggle sonrası aynı filtreye geri dönülsün
+$return_qs = http_build_query(array_filter([
+    'search' => $search,
+    'status' => $status_filter,
+    'page' => $page > 1 ? $page : '',
+]));
+$return_qs_js = json_encode($return_qs, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+
 // KPI'lar
 $kpi_stmt = $conn->prepare("
     SELECT
@@ -197,9 +205,9 @@ $stmt->close();
                                     <div class="action-btns">
                                         <button onclick="editProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
                                         <?php if ($product['status'] === 'Stokta'): ?>
-                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Pasif')" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
+                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Pasif', <?php echo $return_qs_js; ?>)" class="icon-btn btn-pause" title="Pasife Al"><?php echo icon('x'); ?></button>
                                         <?php elseif ($product['status'] === 'Pasif'): ?>
-                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Stokta')" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
+                                            <button onclick="toggleProductStatus(<?php echo $product['id']; ?>, 'Stokta', <?php echo $return_qs_js; ?>)" class="icon-btn btn-activate" title="Stoğa Al"><?php echo icon('refresh'); ?></button>
                                         <?php endif; ?>
                                         <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
                                     </div>
@@ -379,12 +387,14 @@ $stmt->close();
             }
         }
 
-        function toggleProductStatus(id, status) {
+        function toggleProductStatus(id, status, returnQs) {
             const msg = status === 'Pasif'
                 ? 'Bu ürünü pasife almak istediğinizden emin misiniz? Stok listesinde görünmeyecek.'
                 : 'Bu ürünü tekrar stoğa almak istediğinizden emin misiniz?';
             if (confirm(msg)) {
-                window.location.href = 'toggle-product-status.php?id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status);
+                let url = 'toggle-product-status.php?id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status);
+                if (returnQs) url += '&return=' + encodeURIComponent(returnQs);
+                window.location.href = url;
             }
         }
 
