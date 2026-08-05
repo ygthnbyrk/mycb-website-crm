@@ -1,16 +1,11 @@
 <?php
 require_once __DIR__ . '/../tfpdf.php';
 
-/**
- * Teklif PDF şablonu. Şirket iletişim bilgileri aşağıda placeholder —
- * gerçek adres/telefon/e-posta bilgisi netleşince doldurulacak.
- */
 class QuotePdf extends tFPDF
 {
-    public $companyName = 'MYCB Teknoloji Sistemleri';
-    public $companyAddress = '[Şirket adresi]';
-    public $companyPhone = '[Telefon]';
-    public $companyEmail = '[E-posta]';
+    public $companyName = 'Mycb Teknoloji Sanayi Ticaret Ltd.Şti';
+    public $companyAddress = 'Mithatpaşa Mah. Gazi Paşa Cad. No:74 K:4 Kozlu/Zonguldak';
+    public $companyPhone = '0532 629 73 19';
     private $logoPath;
 
     const MARGIN = 15;
@@ -44,7 +39,7 @@ class QuotePdf extends tFPDF
         $this->SetX(-95);
         $this->SetFont('DejaVu', '', 8.5);
         $this->SetTextColor(120, 120, 120);
-        $this->MultiCell(80, 4.2, $this->companyAddress . "\n" . $this->companyPhone . ' • ' . $this->companyEmail, 0, 'R');
+        $this->MultiCell(80, 4.2, $this->companyAddress . "\n" . $this->companyPhone, 0, 'R');
 
         $this->SetY(30);
         $this->SetDrawColor(220, 38, 38);
