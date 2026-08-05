@@ -92,17 +92,21 @@ $default_valid_until = date('Y-m-d', strtotime('+15 days'));
             <div class="card">
                 <div class="card-header"><?php echo icon('package'); ?> Teklif Kalemleri</div>
 
-                <div id="item_list" class="item-list" style="display: none;">
-                    <div class="quote-item-row" style="background: var(--bg-page); font-weight: 600;">
-                        <div>Ürün / Hizmet</div>
-                        <div>Açıklama</div>
-                        <div>Miktar</div>
-                        <div>Birim Fiyat</div>
-                        <div>KDV %</div>
-                        <div>Toplam</div>
-                        <div></div>
-                    </div>
-                    <div id="item_rows"></div>
+                <div id="item_list" class="table-wrap" style="display: none;">
+                    <table id="items_table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:160px;">Ürün / Hizmet</th>
+                                <th style="min-width:180px;">Açıklama</th>
+                                <th style="width:80px;">Miktar</th>
+                                <th style="width:120px;">Birim Fiyat (₺)</th>
+                                <th style="width:80px;">KDV %</th>
+                                <th style="width:120px; text-align:right;">Toplam</th>
+                                <th style="width:44px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="item_rows"></tbody>
+                    </table>
                 </div>
                 <div id="no_items" class="no-items">Henüz kalem eklenmedi</div>
 
@@ -237,15 +241,15 @@ $default_valid_until = date('Y-m-d', strtotime('+15 days'));
             noItems.style.display = 'none';
 
             container.innerHTML = items.map((it, i) => `
-                <div class="quote-item-row">
-                    <div><input type="text" placeholder="Ürün / hizmet adı" value="${escapeHtml(it.name)}" onchange="items[${i}].name = this.value"></div>
-                    <div><input type="text" placeholder="Açıklama" value="${escapeHtml(it.description)}" onchange="items[${i}].description = this.value"></div>
-                    <div><input type="number" step="1" min="0" value="${it.qty}" onchange="items[${i}].qty = this.value; renderItems(); updateSummary();"></div>
-                    <div><input type="number" step="0.01" min="0" value="${it.unit_price}" onchange="items[${i}].unit_price = this.value; renderItems(); updateSummary();"></div>
-                    <div><input type="number" step="0.01" min="0" value="${it.vat_rate}" onchange="items[${i}].vat_rate = this.value; renderItems(); updateSummary();"></div>
-                    <div class="line-total">₺${lineTotal(it).toFixed(2)}</div>
-                    <div><button type="button" onclick="removeItem(${i})" class="icon-btn btn-delete" title="Kaldır">${trashIconSvg}</button></div>
-                </div>
+                <tr>
+                    <td><input type="text" placeholder="Ürün / hizmet adı" value="${escapeHtml(it.name)}" onchange="items[${i}].name = this.value"></td>
+                    <td><input type="text" placeholder="Açıklama (opsiyonel)" value="${escapeHtml(it.description)}" onchange="items[${i}].description = this.value"></td>
+                    <td><input type="number" step="1" min="0" value="${it.qty}" onchange="items[${i}].qty = this.value; renderItems(); updateSummary();"></td>
+                    <td><input type="number" step="0.01" min="0" value="${it.unit_price}" onchange="items[${i}].unit_price = this.value; renderItems(); updateSummary();"></td>
+                    <td><input type="number" step="0.01" min="0" value="${it.vat_rate}" onchange="items[${i}].vat_rate = this.value; renderItems(); updateSummary();"></td>
+                    <td style="text-align:right; font-weight:700; color: var(--accent); white-space:nowrap;">₺${lineTotal(it).toFixed(2)}</td>
+                    <td style="text-align:center;"><button type="button" onclick="removeItem(${i})" class="icon-btn btn-delete" title="Kaldır">${trashIconSvg}</button></td>
+                </tr>
             `).join('');
         }
 

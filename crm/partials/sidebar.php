@@ -9,14 +9,14 @@ $active_page = $active_page ?? '';
 $nav_items = [
     ['page' => 'dashboard',          'href' => 'dashboard.php',          'icon' => 'home',    'label' => 'Ana Sayfa'],
     ['page' => 'telegram-review',    'href' => 'telegram-review.php',    'icon' => 'bell',    'label' => 'Telegram Onay'],
+    ['page' => 'quotes',             'href' => 'quotes.php',             'icon' => 'file-text', 'label' => 'Teklifler',
+        'group' => ['quotes', 'create-quote']],
     ['page' => 'customers',          'href' => 'customers.php',          'icon' => 'users',   'label' => 'Müşteriler'],
     ['page' => 'products',           'href' => 'products.php',           'icon' => 'package', 'label' => 'Ürünler'],
     ['page' => 'simcards',           'href' => 'simcards.php',           'icon' => 'sim',     'label' => 'Sim Kartlar'],
     ['page' => 'create-sale',        'href' => 'create-sale.php',        'icon' => 'dollar',  'label' => 'Satış'],
     ['page' => 'sales-list',         'href' => 'sales-list.php',         'icon' => 'list',    'label' => 'Satış Listesi'],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
-    ['page' => 'quotes',             'href' => 'quotes.php',             'icon' => 'file-text', 'label' => 'Teklifler',
-        'group' => ['quotes', 'create-quote']],
     ['page' => 'bulk-uploads',       'href' => 'bulk-uploads.php',       'icon' => 'upload',  'label' => 'Toplu Yüklemeler',
         'group' => ['bulk-uploads', 'bulk-sales-upload', 'subscription-renewal']],
 ];

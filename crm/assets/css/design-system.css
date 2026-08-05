@@ -910,21 +910,19 @@ table tr.warning { background: var(--warning-soft); }
 .status-select.status-olumlu { background: var(--success-soft); color: var(--success); }
 .status-select.status-olumsuz { background: var(--danger-soft); color: var(--danger); }
 
-.quote-item-row {
-    display: grid;
-    grid-template-columns: 2fr 1.6fr 64px 100px 64px 100px 40px;
-    gap: 8px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    align-items: center;
-    font-size: 13px;
-}
-.quote-item-row:last-child { border-bottom: none; }
-.quote-item-row input {
+/* Teklif kalemleri: fatura kesercesine tablo içinde satır bazlı giriş */
+#items_table td { padding: 8px 10px; vertical-align: middle; }
+#items_table input {
+    width: 100%;
     padding: 7px 9px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     font-size: 12.5px;
-    width: 100%;
+    background: var(--bg-card);
+    color: var(--text-primary);
 }
-.quote-item-row .line-total { font-weight: 700; color: var(--accent); text-align: right; }
+#items_table input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
