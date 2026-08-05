@@ -1,5 +1,9 @@
 <?php
 require_once __DIR__ . '/../tfpdf.php';
+// Bu tFPDF derlemesinde unifont/ttfonts.php'nin require'ı tfpdf.php içinde
+// yorum satırı olarak bırakılmış (TTFontFile sınıfı otomatik yüklenmiyor) —
+// AddFont(..., true) çağrılmadan önce elle yüklemek gerekiyor.
+require_once __DIR__ . '/../font/unifont/ttfonts.php';
 
 class QuotePdf extends tFPDF
 {
