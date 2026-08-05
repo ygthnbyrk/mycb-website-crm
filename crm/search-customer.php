@@ -15,7 +15,7 @@ if (strlen($search) < 2) {
 }
 
 $search_param = "%$search%";
-$stmt = $conn->prepare("SELECT id, name, tax_number, phone FROM customers WHERE name LIKE ? OR tax_number LIKE ? LIMIT 10");
+$stmt = $conn->prepare("SELECT id, name, tax_number, phone, email, address FROM customers WHERE name LIKE ? OR tax_number LIKE ? LIMIT 10");
 $stmt->bind_param("ss", $search_param, $search_param);
 $stmt->execute();
 $result = $stmt->get_result();

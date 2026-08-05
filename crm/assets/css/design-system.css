@@ -891,3 +891,40 @@ table tbody tr:last-child td { border-bottom: none; }
 table tr.success { background: var(--success-soft); }
 table tr.error { background: var(--danger-soft); }
 table tr.warning { background: var(--warning-soft); }
+
+/* ============================================
+   Teklifler
+   ============================================ */
+.status-select {
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+}
+.status-select:focus { outline: none; }
+.status-select.status-beklemede { background: var(--bg-hover); color: var(--text-secondary); }
+.status-select.status-olumlu { background: var(--success-soft); color: var(--success); }
+.status-select.status-olumsuz { background: var(--danger-soft); color: var(--danger); }
+
+.quote-item-row {
+    display: grid;
+    grid-template-columns: 2fr 1.6fr 64px 100px 64px 100px 40px;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 13px;
+}
+.quote-item-row:last-child { border-bottom: none; }
+.quote-item-row input {
+    padding: 7px 9px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 12.5px;
+    width: 100%;
+}
+.quote-item-row .line-total { font-weight: 700; color: var(--accent); text-align: right; }

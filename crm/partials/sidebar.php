@@ -15,6 +15,8 @@ $nav_items = [
     ['page' => 'create-sale',        'href' => 'create-sale.php',        'icon' => 'dollar',  'label' => 'Satış'],
     ['page' => 'sales-list',         'href' => 'sales-list.php',         'icon' => 'list',    'label' => 'Satış Listesi'],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
+    ['page' => 'quotes',             'href' => 'quotes.php',             'icon' => 'file-text', 'label' => 'Teklifler',
+        'group' => ['quotes', 'create-quote']],
     ['page' => 'bulk-uploads',       'href' => 'bulk-uploads.php',       'icon' => 'upload',  'label' => 'Toplu Yüklemeler',
         'group' => ['bulk-uploads', 'bulk-sales-upload', 'subscription-renewal']],
 ];
