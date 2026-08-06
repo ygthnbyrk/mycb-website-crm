@@ -51,8 +51,7 @@ return [
             'Nano Sim ve WiFi Özelliği',
             'Çalışma Sıcaklığı -20°C ile +65°C',
         ],
-        // TODO: görseller henüz eklenmedi — dosya olarak gelince buraya eklenecek
-        'images' => [],
+        'images' => ['tek-tarafli-182-1.png', 'tek-tarafli-182-2.jpg', 'tek-tarafli-182-3.png'],
     ],
     'wifi-offline' => [
         'label' => 'Wifi Offline Dashcam Kamera - Oscar',
