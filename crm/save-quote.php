@@ -25,6 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $items_data = is_array($items_data) ? $items_data : [];
     $items_data = array_values(array_filter($items_data, fn($it) => trim($it['name'] ?? '') !== ''));
 
+    // Seçilen katalog ürünlerini (PDF'e eklenecek görsel/özellik sayfaları) doğrula
+    $quote_catalog = require 'partials/quote-catalog.php';
+    $selected_catalog = $_POST['catalog_images'] ?? [];
+    $selected_catalog = is_array($selected_catalog) ? array_values(array_intersect($selected_catalog, array_keys($quote_catalog))) : [];
+    $catalog_images = !empty($selected_catalog) ? implode(',', $selected_catalog) : null;
+
     if ($customer_name === '' || empty($items_data)) {
         $_SESSION['error'] = 'Müşteri adı ve en az bir kalem gerekli.';
         header('Location: create-quote.php');
@@ -41,9 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $count_stmt->close();
     $quote_number = sprintf('TKL-%s-%04d', $year, $count + 1);
 
-    $stmt = $conn->prepare("INSERT INTO quotes (quote_number, customer_id, customer_name, customer_tax_number, customer_phone, customer_email, customer_address, quote_date, valid_until, notes, subtotal, vat_total, total, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO quotes (quote_number, customer_id, customer_name, customer_tax_number, customer_phone, customer_email, customer_address, quote_date, valid_until, notes, catalog_images, subtotal, vat_total, total, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param(
-        "sissssssssdddi",
+        "sisssssssssdddi",
         $quote_number,
         $customer_id,
         $customer_name,
@@ -54,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quote_date,
         $valid_until,
         $notes,
+        $catalog_images,
         $subtotal,
         $vat_total,
         $total,

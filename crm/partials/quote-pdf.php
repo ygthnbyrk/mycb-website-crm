@@ -75,4 +75,18 @@ class QuotePdf extends tFPDF
         $this->Line($this->GetX(), $this->GetY(), self::PAGE_WIDTH - self::MARGIN, $this->GetY());
         $this->Ln(3);
     }
+
+    /** Görseli en-boy oranını koruyarak maxW x maxH kutusuna sığdırır, sayfada ortalar */
+    function FitImage($path, $maxW, $maxH)
+    {
+        $size = @getimagesize($path);
+        if (!$size) return;
+        [$pxW, $pxH] = $size;
+        $ratio = min($maxW / $pxW, $maxH / $pxH);
+        $w = $pxW * $ratio;
+        $h = $pxH * $ratio;
+        $x = self::MARGIN + (self::CONTENT_WIDTH - $w) / 2;
+        $this->Image($path, $x, $this->GetY(), $w, $h);
+        $this->SetY($this->GetY() + $h);
+    }
 }

@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_name = $_SESSION['user_name'];
 $default_notes = "Fiyatlarımıza KDV dahildir.\nTeklifimiz, geçerlilik tarihine kadar geçerlidir.\nÖdeme koşulları: Sipariş onayında belirlenecektir.";
 $default_valid_until = date('Y-m-d', strtotime('+15 days'));
+$quote_catalog = require 'partials/quote-catalog.php';
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -111,6 +112,29 @@ $default_valid_until = date('Y-m-d', strtotime('+15 days'));
                 <div id="no_items" class="no-items">Henüz kalem eklenmedi</div>
 
                 <button type="button" onclick="addItem()" class="btn btn-secondary" style="margin-top: 14px;"><?php echo icon('plus'); ?> Satır Ekle</button>
+            </div>
+
+            <!-- Ürün Kataloğu -->
+            <div class="card">
+                <div class="card-header"><?php echo icon('package'); ?> Ürün Görselleri (PDF'e Ek Sayfa)</div>
+                <p style="color: var(--text-muted); font-size: 12.5px; margin-top: -8px; margin-bottom: 16px;">
+                    Seçtiğin ürünlerin görselleri ve teknik özellikleri, teklif PDF'inin sonuna standart katalog sayfaları olarak eklenir.
+                </p>
+                <?php if (empty($quote_catalog)): ?>
+                    <div class="no-items">Henüz katalog ürünü eklenmedi.</div>
+                <?php else: ?>
+                    <div class="catalog-picker">
+                        <?php foreach ($quote_catalog as $key => $product): ?>
+                            <label class="catalog-option">
+                                <input type="checkbox" name="catalog_images[]" value="<?php echo htmlspecialchars($key); ?>">
+                                <?php if (!empty($product['images'][0])): ?>
+                                    <img src="assets/images/products/<?php echo htmlspecialchars($product['images'][0]); ?>" alt="">
+                                <?php endif; ?>
+                                <span><?php echo htmlspecialchars($product['label']); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Notlar -->

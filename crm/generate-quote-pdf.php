@@ -143,6 +143,49 @@ if (!empty($quote['notes'])) {
     $pdf->MultiCell(0, 5, $quote['notes'], 0, 'L');
 }
 
+// Katalog sayfaları: seçilen ürünlerin görselleri + teknik özellikleri
+if (!empty($quote['catalog_images'])) {
+    $quote_catalog = require 'partials/quote-catalog.php';
+    $selected_keys = array_filter(explode(',', $quote['catalog_images']));
+
+    foreach ($selected_keys as $key) {
+        if (!isset($quote_catalog[$key])) continue;
+        $product = $quote_catalog[$key];
+
+        $pdf->AddPage();
+
+        $pdf->SetFont('DejaVu', 'B', 16);
+        $pdf->SetTextColor(20, 20, 20);
+        $pdf->Cell(0, 9, $product['label'], 0, 1, 'L');
+        $pdf->Ln(2);
+
+        if (!empty($product['specs'])) {
+            $pdf->SetFont('DejaVu', 'B', 10);
+            $pdf->SetTextColor(80, 80, 80);
+            $pdf->Cell(0, 6, 'TEKNİK ÖZELLİKLER', 0, 1, 'L');
+            $pdf->SetFont('DejaVu', '', 9.5);
+            $pdf->SetTextColor(60, 60, 60);
+            foreach ($product['specs'] as $spec) {
+                $pdf->SetX(QuotePdf::MARGIN);
+                $pdf->Cell(4, 5.5, '•', 0, 0, 'L');
+                $pdf->SetX(QuotePdf::MARGIN + 5);
+                $pdf->MultiCell(QuotePdf::CONTENT_WIDTH - 5, 5.5, $spec, 0, 'L');
+            }
+            $pdf->Ln(4);
+        }
+
+        if (!empty($product['images'])) {
+            foreach ($product['images'] as $img) {
+                $imgPath = __DIR__ . '/assets/images/products/' . $img;
+                if (file_exists($imgPath)) {
+                    $pdf->FitImage($imgPath, 110, 75);
+                    $pdf->Ln(4);
+                }
+            }
+        }
+    }
+}
+
 $filename = 'Teklif-' . $quote['quote_number'] . '.pdf';
 $pdf->Output('D', $filename);
 exit;
