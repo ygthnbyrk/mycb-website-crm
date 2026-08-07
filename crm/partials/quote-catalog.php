@@ -71,7 +71,14 @@ return [
     ],
     'harvox' => [
         'label' => 'Harvox Online Kamera',
-        'specs' => [],
+        'specs' => [
+            '2K Görüntü Kalitesi',
+            "512 GB'a Kadar Hafıza Desteği",
+            "3'inç Ekran",
+            'G Sensör',
+            'Dahili Mikrofon',
+            'Güç açıldığında otomatik olarak açılır ve kayda başlar',
+        ],
         'images' => ['harvox-online-1.jpg'],
     ],
     't0' => [
@@ -115,5 +122,36 @@ return [
             'Insight Yakıt Tüketim Analizi: Ayrıntılı yakıt tüketim analizi ekranlarına opsiyonel olarak ulaşın.',
         ],
         'images' => ['t15-premium-canbus-1.png', 't15-premium-canbus-2.png'],
+    ],
+    'moto22' => [
+        'label' => 'Moto22 Motosiklet Takip Cihazı',
+        'specs' => [
+            'Anlık Konum Takibi: Motorların konumunu gerçek zamanlı izleyin.',
+            'Batarya Özelliği: Opsiyonel batarya seçeneği ile kesintisiz veri almaya devam edin.',
+            'Suya - Toza Karşı Dayanıklılık: Özel tasarım IP65 kutular ile sudan ve tozdan koruma sağlayın.',
+            'Ürün Boyutları: 87 x 62 x 22 mm',
+            'Ağırlık: 52 gr',
+            'Voltaj Aralığı: 9 - 30 V DC',
+            'Sıcaklık Aralığı: -40 / +85°C',
+            'Göstergeler: PWR / GSM / GPRS',
+        ],
+        'images' => ['moto22-1.png'],
+    ],
+    'dba' => [
+        'label' => 'Dijital Sürüş Koçu',
+        'specs' => [
+            'Dijital Sürüş Koçu, G-Sensör ile sürücü davranışlarını izler, sesli uyarılar ve sürücü kimlik tespiti sağlar. Ayrıca, gelişmiş raporlama ve opsiyonel sürücü risk analizi ile güvenliği artırır.',
+            'G-Sensör Özelliği: Hassas ivmeölçer (G-Sensör) ile sürücü davranışlarını doğru tespit edin.',
+            'Sesli Uyarı Özelliği: Sürücülerin seyahat anında sesli uyarılmasını sağlayın.',
+            'Sürücü Takip Özelliği: Dahili kart okuyucu özelliği ile aracı kimin sürdüğünü ayırt edin.',
+            'Gelişmiş Raporlama ve Analizler: Varlık takibi için anlık ve geçmişe dönük raporları alın.',
+            'Insight Sürücü Risk Analizi: Ayrıntılı sürücü risk analizi ekranlarına opsiyonel olarak ulaşın.',
+            'Ürün Boyutları: 85 x 85 x 23 mm',
+            'Ağırlık: 81 gr',
+            'Teknoloji: WiFi / BLE',
+            'Dil Seçenekleri: Türkçe / İngilizce',
+            'Özellikler: Sesli Uyarı, Görsel Uyarı, NFC Sürücü Tanıma, G Sensör, Sürücü Takip, T15 2G ve T15 4G ile birlikte çalışır.',
+        ],
+        'images' => ['dba-1.png'],
     ],
 ];
