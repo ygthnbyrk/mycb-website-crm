@@ -87,4 +87,33 @@ return [
         ],
         'images' => ['t0-1.png'],
     ],
+    'p56' => [
+        'label' => 'P56 Takip Cihazı',
+        'specs' => [
+            'Ürün Boyutları: 80 x 80 x 24.5 mm',
+            'Ağırlık: 85 gr',
+            'Voltaj Aralığı: 5 V DC',
+            'Pil Tipi: Şarj Edilebilir Li-Ion',
+            'Pil Kapasitesi: 3400 / 6800 mAh',
+            'Sıcaklık Aralığı: -20/+60°C',
+            'GSM/GPRS Anten: Dahili PCB Anten',
+        ],
+        'images' => ['p56-1.png'],
+    ],
+    't15-premium-canbus' => [
+        'label' => 'T15 Premium Canbus',
+        'specs' => [
+            'Anlık Konum Takibi: Araçlarınızın konumunu gerçek zamanlı izleyin.',
+            'G-Sensör Özelliği: Hassas ivmeölçer (G-Sensör) ile sürücü davranışlarını doğru tespit edin.',
+            'CAN Bus Özelliği: Opsiyonel CAN bus modülü ile anlık yakıt tüketimi, km, emniyet kemeri vb. verileri takip edin. Aracınızın gerçek gösterge ve sensör verilerine ulaşın.',
+            'Opsiyonel 4G bağlantısıyla en geniş kapsama alanı içinde araçlarınızı takip edin.',
+            'Batarya Özelliği: Opsiyonel batarya seçeneği ile veri aktarımını kesintisiz sürdürün.',
+            'Gateway Özelliği: Opsiyonel gateway özelliği ile araç takip cihazı üzerinden kablosuz sensör verilerine ulaşın.',
+            'Motor Blokaj Özelliği: Opsiyonel kart okuyucu ile motoru uzaktan durdurun ve çalıştırın.',
+            'Sürücü Takip Özelliği: Opsiyonel sürücü takip kiti ile aracı kimin sürdüğünü ayırt edin.',
+            'Canbus Özelliği: Araçların marka ve modeline göre anlık yakıt tüketimi, yakıt menzili, motor suyu sıcaklığı, gerçek km takibi (odometre), ortalama yakıt tüketimi, emniyet kemeri kullanımı, el freni, motor devri benzeri verileri takip edin.',
+            'Insight Yakıt Tüketim Analizi: Ayrıntılı yakıt tüketim analizi ekranlarına opsiyonel olarak ulaşın.',
+        ],
+        'images' => ['t15-premium-canbus-1.png', 't15-premium-canbus-2.png'],
+    ],
 ];

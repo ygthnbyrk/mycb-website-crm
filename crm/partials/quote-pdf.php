@@ -127,6 +127,13 @@ class QuotePdf extends tFPDF
         }
         if (empty($sizes)) return;
 
+        // Image() Cell/MultiCell'in aksine otomatik sayfa taşması kontrolü yapmıyor —
+        // satır kalan sayfa alanına sığmıyorsa (ör. uzun bir özellik listesinden sonra)
+        // taşmayı önlemek için önce yeni sayfaya geçiyoruz.
+        if ($this->GetY() + $rowH > $this->PageBreakTrigger) {
+            $this->AddPage($this->CurOrientation);
+        }
+
         $totalW = array_sum(array_column($sizes, 'w')) + $gap * (count($sizes) - 1);
         $x = self::MARGIN + (self::CONTENT_WIDTH - $totalW) / 2;
         $y = $this->GetY();
