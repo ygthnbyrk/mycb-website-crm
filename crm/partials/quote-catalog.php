@@ -72,7 +72,7 @@ return [
     'harvox' => [
         'label' => 'Harvox Online Kamera',
         'specs' => [],
-        'images' => ['harvox-online-1.png'],
+        'images' => ['harvox-online-1.jpg'],
     ],
     't0' => [
         'label' => 'T0 Standart Araç Takip Cihazı',
