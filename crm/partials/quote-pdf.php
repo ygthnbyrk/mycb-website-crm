@@ -97,4 +97,43 @@ class QuotePdf extends tFPDF
         $this->Image($path, $x, $this->GetY(), $w, $h);
         $this->SetY($this->GetY() + $h);
     }
+
+    /**
+     * Birden fazla görseli tek satırda yan yana yerleştirir (sayfa genişliğini ve
+     * sabit bir maksimum yüksekliği paylaşarak), ortalar. FPDF'in Image() çağrısı
+     * kendiliğinden sayfa taşması kontrolü yapmadığı için (Cell/MultiCell'in aksine),
+     * birden çok görseli alt alta dizmek sayfa sınırını aşabiliyordu — bunun yerine
+     * hepsi tek, öngörülebilir yükseklikte bir satıra sığdırılıyor.
+     */
+    function ImageRow($paths, $maxHeight = 70)
+    {
+        $paths = array_values(array_filter($paths, 'file_exists'));
+        $n = count($paths);
+        if ($n === 0) return;
+
+        $gap = 6;
+        $slotW = (self::CONTENT_WIDTH - $gap * ($n - 1)) / $n;
+        $sizes = [];
+        $rowH = 0;
+        foreach ($paths as $p) {
+            $info = @getimagesize($p);
+            if (!$info) continue;
+            [$pxW, $pxH] = $info;
+            $ratio = min($slotW / $pxW, $maxHeight / $pxH);
+            $w = $pxW * $ratio;
+            $h = $pxH * $ratio;
+            $sizes[] = ['path' => $p, 'w' => $w, 'h' => $h];
+            $rowH = max($rowH, $h);
+        }
+        if (empty($sizes)) return;
+
+        $totalW = array_sum(array_column($sizes, 'w')) + $gap * (count($sizes) - 1);
+        $x = self::MARGIN + (self::CONTENT_WIDTH - $totalW) / 2;
+        $y = $this->GetY();
+        foreach ($sizes as $s) {
+            $this->Image($s['path'], $x, $y + ($rowH - $s['h']) / 2, $s['w'], $s['h']);
+            $x += $s['w'] + $gap;
+        }
+        $this->SetY($y + $rowH);
+    }
 }

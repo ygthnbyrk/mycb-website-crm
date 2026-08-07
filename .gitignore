@@ -16,3 +16,8 @@ crm/debug.txt
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# tFPDF'in çalışma anında ürettiği font metrik önbelleği (kaynak değil, türetilmiş)
+crm/font/unifont/*.mtx.php
+crm/font/unifont/*.cw.dat
+crm/font/unifont/*.cw127.php

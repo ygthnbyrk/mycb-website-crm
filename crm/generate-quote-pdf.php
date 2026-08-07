@@ -175,13 +175,8 @@ if (!empty($quote['catalog_images'])) {
         }
 
         if (!empty($product['images'])) {
-            foreach ($product['images'] as $img) {
-                $imgPath = __DIR__ . '/assets/images/products/' . $img;
-                if (file_exists($imgPath)) {
-                    $pdf->FitImage($imgPath, 110, 75);
-                    $pdf->Ln(4);
-                }
-            }
+            $imgPaths = array_map(fn($img) => __DIR__ . '/assets/images/products/' . $img, $product['images']);
+            $pdf->ImageRow($imgPaths, count($imgPaths) > 1 ? 65 : 90);
         }
     }
 }
