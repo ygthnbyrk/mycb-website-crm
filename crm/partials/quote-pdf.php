@@ -32,37 +32,45 @@ class QuotePdf extends tFPDF
     function Header()
     {
         if (file_exists($this->logoPath)) {
-            $this->Image($this->logoPath, self::MARGIN, 12, 42);
+            $this->Image($this->logoPath, self::MARGIN, 10, 42);
         }
 
-        $this->SetXY(-95, 13);
+        $this->SetXY(-95, 10);
         $this->SetFont('DejaVu', 'B', 18);
         $this->SetTextColor(20, 20, 20);
         $this->Cell(80, 8, 'TEKLİF', 0, 2, 'R');
 
         $this->SetX(-95);
-        $this->SetFont('DejaVu', '', 8.5);
-        $this->SetTextColor(120, 120, 120);
-        $this->MultiCell(80, 4.2, $this->companyAddress . "\n" . $this->companyPhone, 0, 'R');
+        $this->SetFont('DejaVu', 'B', 9.5);
+        $this->SetTextColor(90, 90, 90);
+        $this->Cell(80, 5, $this->companyPhone, 0, 2, 'R');
 
-        $this->SetY(30);
+        $this->SetX(-95);
+        $this->SetFont('DejaVu', '', 8.5);
+        $this->SetTextColor(140, 140, 140);
+        $this->MultiCell(80, 4.2, $this->companyAddress, 0, 'R');
+
+        $this->SetY(38);
         $this->SetDrawColor(220, 38, 38);
         $this->SetLineWidth(0.6);
-        $this->Line(self::MARGIN, 30, self::PAGE_WIDTH - self::MARGIN, 30);
+        $this->Line(self::MARGIN, 38, self::PAGE_WIDTH - self::MARGIN, 38);
         $this->SetLineWidth(0.2);
-        $this->SetY(36);
+        $this->SetY(44);
     }
 
     function Footer()
     {
-        $this->SetY(-18);
+        $this->SetY(-22);
         $this->SetDrawColor(229, 231, 235);
         $this->SetLineWidth(0.2);
         $this->Line(self::MARGIN, $this->GetY(), self::PAGE_WIDTH - self::MARGIN, $this->GetY());
         $this->Ln(2);
         $this->SetFont('DejaVu', '', 8);
         $this->SetTextColor(150, 150, 150);
-        $this->Cell(0, 5, $this->companyName . '  •  Sayfa ' . $this->PageNo() . '/{nb}', 0, 0, 'C');
+        $this->Cell(0, 5, $this->companyName . '  •  Sayfa ' . $this->PageNo() . '/{nb}', 0, 1, 'C');
+        $this->SetFont('DejaVu', '', 7.5);
+        $this->SetTextColor(180, 180, 180);
+        $this->Cell(0, 4, 'Trio Mobil | İş Ortağı', 0, 0, 'C');
     }
 
     /** İnce alt çizgili bir bölüm başlığı (örn. "MÜŞTERİ", "KALEMLER") */
