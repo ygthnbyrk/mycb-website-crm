@@ -49,7 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['excel_file'])) {
                 $operator = trim($row[1]);
                 $company = trim($row[2]);
                 $category = trim($row[3]);
-                $status = trim($row[4]);
+                $status_raw = mb_strtolower(trim($row[4]), 'UTF-8');
+                $status_map = ['stokta' => 'Stokta', 'satıldı' => 'Satıldı', 'satildi' => 'Satıldı', 'pasif' => 'Pasif'];
+                $status = $status_map[$status_raw] ?? trim($row[4]);
                 $cost_price = floatval($row[5]);
                 $vat = $cost_price * 0.20;
                 $total_cost = $cost_price + $vat;

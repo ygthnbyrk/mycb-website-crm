@@ -232,8 +232,15 @@ if (empty($satis_tarihi)) {
                 $date_parsed = true;
             }
         }
+
+        // Türk sırası (GG.AA.YYYY) geçersizse, Excel'in bazen ürettiği ABD sırasını
+        // (AA/GG/YY, örn. "5/20/26") dene - ay 12'den büyükse Türk sırası zaten elenir.
+        if (!$date_parsed && $yil >= 2000 && $yil <= 2100 && checkdate($gun, $ay, $yil)) {
+            $parsed_date = sprintf('%04d-%02d-%02d', $yil, $gun, $ay);
+            $date_parsed = true;
+        }
     }
-    
+
     // YYYY-MM-DD formatı (ISO)
     if (!$date_parsed && preg_match('/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/', $satis_tarihi, $matches)) {
         $yil = intval($matches[1]);
