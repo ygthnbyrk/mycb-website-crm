@@ -152,6 +152,7 @@ try {
         // 3. SIM kontrolü
         $simcard_id = null;
         $sim_name = '';
+        $sim_operator = '';
         $sim_phone_display = '';
         if (!empty($sim_telefon)) {
             // Telefon numarasını normalize et (sadece rakamlar)
@@ -186,6 +187,7 @@ try {
                 } else {
                     $simcard_id = $simcard['id'];
                     $sim_name = $simcard['company'] . ' - ' . $simcard['operator'];
+                    $sim_operator = $simcard['operator'];
                     $sim_phone_display = $simcard['phone_number'];
                 }
             } else {
@@ -195,6 +197,7 @@ try {
                 } else {
                     $simcard_id = $simcard['id'];
                     $sim_name = $simcard['company'] . ' - ' . $simcard['operator'];
+                    $sim_operator = $simcard['operator'];
                     $sim_phone_display = $simcard['phone_number'];
                 }
             }
@@ -320,6 +323,7 @@ if (empty($satis_tarihi)) {
             'sim_telefon_display' => $sim_phone_display ? $sim_phone_display : $sim_telefon,
             'simcard_id' => $simcard_id,
             'sim_name' => $sim_name,
+            'sim_operator' => $sim_operator,
             'plaka' => $plaka,
             'satis_tarihi' => $satis_tarihi,
             'parsed_date' => $parsed_date,

@@ -75,6 +75,7 @@ try {
             $grouped_sales[$group_key]['simcards'][] = [
                 'simcard_id' => $sale['simcard_id'],
                 'sim_name' => $sale['sim_name'],
+                'sim_operator' => $sale['sim_operator'] ?? '',
                 'sim_telefon' => $sale['sim_telefon'],
                 'sim_telefon_display' => $sale['sim_telefon_display'] ?? $sale['sim_telefon'],
                 'price' => $sale['sim_fiyati']
@@ -199,7 +200,7 @@ try {
                 $sale_id, 
                 $simcard['simcard_id'],
                 $sim_display,
-                $simcard['sim_name'],
+                $simcard['sim_operator'],
                 $simcard['price']
             );
             if (!$stmt_match->execute()) {
@@ -220,7 +221,7 @@ try {
                 $sale_id,
                 $group['customer_id'],
                 $simcard['simcard_id'],
-                $simcard['sim_name'],
+                $simcard['sim_operator'],
                 $sim_display,
                 $group['parsed_date'],
                 $renewal_date_sim
