@@ -166,14 +166,25 @@ if ($other_qty > 0) {
     $model_segments[] = ['label' => 'Diğer', 'value' => $other_qty, 'color' => 'var(--text-muted)'];
 }
 
-// Sim kart operator dagilimi (secili yil)
-$sstmt = $conn->prepare("SELECT ss.operator, COUNT(*) as qty FROM sale_simcards ss INNER JOIN sales s ON ss.sale_id = s.id WHERE YEAR(s.sale_date) = ? GROUP BY ss.operator ORDER BY qty DESC");
+// Sim kart operator+sirket dagilimi (secili yil) - simcards tablosundan (sale_simcards.operator
+// serbest metin olabiliyor, ör. toplu yuklemede yanlislikla "Sirket - Operator" yazilmis olabiliyordu;
+// simcards.company/operator her zaman temiz ve yetkili kaynak)
+$sstmt = $conn->prepare("
+    SELECT COALESCE(sc.company, '') as company, COALESCE(sc.operator, ss.operator) as operator, COUNT(*) as qty
+    FROM sale_simcards ss
+    INNER JOIN sales s ON ss.sale_id = s.id
+    LEFT JOIN simcards sc ON ss.simcard_id = sc.id
+    WHERE YEAR(s.sale_date) = ?
+    GROUP BY company, operator
+    ORDER BY qty DESC
+");
 $sstmt->bind_param("i", $selected_year);
 $sstmt->execute();
 $all_ops = $sstmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $sim_segments = [];
 foreach ($all_ops as $i => $row) {
-    $sim_segments[] = ['label' => $row['operator'], 'value' => (int)$row['qty'], 'color' => $palette[$i % count($palette)]];
+    $label = !empty($row['company']) ? $row['company'] . ' - ' . $row['operator'] : $row['operator'];
+    $sim_segments[] = ['label' => $label, 'value' => (int)$row['qty'], 'color' => $palette[$i % count($palette)]];
 }
 
 $avg_products_month = round($total_products_sold / 12);
@@ -271,7 +282,7 @@ $avg_simcards_month = round($total_simcards_sold / 12);
             </div>
 
             <div class="detail-card">
-                <h3><?php echo icon('sim'); ?> Sim Kart Dağılımı (Operatör)</h3>
+                <h3><?php echo icon('sim'); ?> Sim Kart Dağılımı (Şirket / Operatör)</h3>
                 <?php if (!empty($sim_segments)): ?>
                     <div class="donut-row">
                         <?php echo svg_donut($sim_segments); ?>
