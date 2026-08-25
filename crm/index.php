@@ -103,7 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn btn-primary">Giriş Yap</button>
         </form>
 
-        <div class="version">Mycb Core v1.0</div>
+        <div class="version">Mycb Crm v2.0</div>
+        <div class="version" style="margin-top:4px;">Powered by <a href="https://www.yirmibir.tr" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Yirmibir Yapay Zeka ve Veri Teknolojileri</a></div>
     </div>
     </div>
     <footer style="width:100%;text-align:center;color:var(--text-muted);font-size:12.5px;padding:15px 0;">
