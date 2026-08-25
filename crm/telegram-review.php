@@ -20,7 +20,7 @@ $sql = "SELECT t.*,
 $result = $conn->query($sql);
 $pending_rows = $result->fetch_all(MYSQLI_ASSOC);
 
-$collecting_count = $conn->query("SELECT COUNT(*) as c FROM telegram_pending_matches WHERE status = 'collecting'")->fetch_assoc()['c'];
+$collecting_rows = $conn->query("SELECT * FROM telegram_pending_matches WHERE status = 'collecting' ORDER BY created_at DESC")->fetch_all(MYSQLI_ASSOC);
 
 $customer_sql = "SELECT t.*, c.name AS mc_name, c.tax_number AS mc_tax, c.address AS mc_address
     FROM telegram_pending_customers t
@@ -65,10 +65,29 @@ $pending_customer_rows = $conn->query($customer_sql)->fetch_all(MYSQLI_ASSOC);
             <div class="alert alert-danger"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
-        <?php if ($collecting_count > 0): ?>
+        <?php if (!empty($collecting_rows)): ?>
             <div class="alert alert-warning">
-                <?php echo $collecting_count; ?> kayıt ikinci fotoğrafı bekliyor (henüz tam gelmedi), listede görünmeyecek.
+                <?php echo count($collecting_rows); ?> kayıt ikinci fotoğrafı bekliyor (henüz tam gelmedi) - aşağıdakilerden birini seç:
             </div>
+            <?php foreach ($collecting_rows as $crow): ?>
+                <div class="card tg-card">
+                    <div class="card-header">
+                        <?php echo icon('clock'); ?>
+                        <?php echo htmlspecialchars($crow['caption_raw'] ?: 'Etiketsiz (müşteri/plaka bilgisi yok)'); ?>
+                        <small style="float:right; color: var(--text-secondary);"><?php echo date('d.m.Y H:i', strtotime($crow['created_at'])); ?></small>
+                    </div>
+                    <div style="padding: 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                        <img src="telegram-photo.php?id=<?php echo $crow['id']; ?>&slot=1" alt="Foto 1" style="max-width:140px; max-height:140px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
+                        <div style="flex:1; min-width:220px;">
+                            <p style="margin-bottom:10px; color:var(--text-secondary); font-size:13.5px;">Sadece 1 fotoğraf geldi, 2.si hiç gelmedi. Elde ne varsa onunla işlemek istersen "Yine de işle" - tekrar Telegram'dan doğru şekilde gönderildiyse (ayrı kayıt olarak zaten geldiyse) bunu sil.</p>
+                            <div class="action-btns" style="justify-content:flex-start;">
+                                <a href="telegram-collecting-action.php?id=<?php echo $crow['id']; ?>&action=process" class="btn btn-secondary" onclick="return confirm('Bu kayıt tek fotoğrafla (2.si olmadan) işlensin mi?');">Yine de işle (1 fotoğrafla)</a>
+                                <a href="telegram-collecting-action.php?id=<?php echo $crow['id']; ?>&action=delete" class="btn btn-secondary" onclick="return confirm('Bu kayıt silinsin mi?');"><?php echo icon('trash'); ?> Sil</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         <?php endif; ?>
 
         <?php if (empty($pending_rows)): ?>
