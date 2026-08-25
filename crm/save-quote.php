@@ -37,15 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Teklif numarası üret: TKL-YYYY-NNNN (o yıl içindeki mevcut teklif sayısına göre)
+    // Teklif numarası üret: TKL-YYYY-NNNN (o yıl içinde şimdiye kadar kullanılmış en
+    // yüksek sıra numarasına göre - COUNT(*) kullanmıyoruz çünkü bir teklif silinirse
+    // sayı geriler ve halen var olan bir numarayla çakışır).
     $year = date('Y', strtotime($quote_date));
-    $count_stmt = $conn->prepare("SELECT COUNT(*) as c FROM quotes WHERE quote_number LIKE ?");
+    $max_stmt = $conn->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(quote_number, '-', -1) AS UNSIGNED)) as maxnum FROM quotes WHERE quote_number LIKE ?");
     $like = "TKL-$year-%";
-    $count_stmt->bind_param("s", $like);
-    $count_stmt->execute();
-    $count = (int)$count_stmt->get_result()->fetch_assoc()['c'];
-    $count_stmt->close();
-    $quote_number = sprintf('TKL-%s-%04d', $year, $count + 1);
+    $max_stmt->bind_param("s", $like);
+    $max_stmt->execute();
+    $max_num = (int)($max_stmt->get_result()->fetch_assoc()['maxnum'] ?? 0);
+    $max_stmt->close();
+    $quote_number = sprintf('TKL-%s-%04d', $year, $max_num + 1);
 
     $stmt = $conn->prepare("INSERT INTO quotes (quote_number, customer_id, customer_name, customer_tax_number, customer_phone, customer_email, customer_address, quote_date, valid_until, notes, catalog_images, subtotal, vat_total, total, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bind_param(

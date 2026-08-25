@@ -45,7 +45,8 @@ $kpi = $conn->query("
         SUM(CASE WHEN status = 'Beklemede' THEN 1 ELSE 0 END) as pending_quotes,
         SUM(CASE WHEN status = 'Olumlu' THEN 1 ELSE 0 END) as won_quotes,
         SUM(CASE WHEN status = 'Olumsuz' THEN 1 ELSE 0 END) as lost_quotes,
-        SUM(total) as total_amount
+        SUM(CASE WHEN status = 'Beklemede' THEN total ELSE 0 END) as pending_amount,
+        SUM(CASE WHEN status = 'Olumlu' THEN total ELSE 0 END) as won_amount
     FROM quotes
 ")->fetch_assoc();
 
@@ -152,8 +153,12 @@ $stmt->close();
                 <p>Olumsuz</p>
             </div>
             <div class="stat-box">
-                <h3>₺<?php echo number_format((float)$kpi['total_amount'], 2, ',', '.'); ?></h3>
-                <p>Toplam Tutar</p>
+                <h3>₺<?php echo number_format((float)$kpi['pending_amount'], 2, ',', '.'); ?></h3>
+                <p>Bekleyen Teklif Tutarı</p>
+            </div>
+            <div class="stat-box success">
+                <h3>₺<?php echo number_format((float)$kpi['won_amount'], 2, ',', '.'); ?></h3>
+                <p>Satışa Dönen Teklif</p>
             </div>
         </div>
 
