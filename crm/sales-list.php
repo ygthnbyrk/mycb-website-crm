@@ -345,6 +345,9 @@ $stmt->close();
                                         <small style="color: var(--text-muted); font-size: 10px;"><?php echo htmlspecialchars($sale['tax_number']); ?></small>
                                     </td>
                                     <td>
+                                        <?php if ($products->num_rows > 3): ?>
+                                            <span class="item-count-tag"><?php echo $products->num_rows; ?> cihaz</span>
+                                        <?php endif; ?>
                                         <div class="item-mini-list">
                                             <?php while($p = $products->fetch_assoc()): ?>
                                                 <div class="item-mini">
@@ -361,6 +364,9 @@ $stmt->close();
                                         </div>
                                     </td>
                                     <td>
+                                        <?php if ($simcards->num_rows > 3): ?>
+                                            <span class="item-count-tag"><?php echo $simcards->num_rows; ?> sim</span>
+                                        <?php endif; ?>
                                         <div class="item-mini-list">
                                             <?php while($s = $simcards->fetch_assoc()): ?>
                                                 <div class="item-mini">
