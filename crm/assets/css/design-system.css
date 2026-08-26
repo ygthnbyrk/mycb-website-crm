@@ -557,8 +557,7 @@ table tbody tr:last-child td { border-bottom: none; }
     overflow: hidden;
     box-shadow: var(--shadow-sm);
 }
-.table-scroll { overflow: auto; max-height: calc(100vh - 320px); }
-.table-scroll thead { position: sticky; top: 0; z-index: 5; }
+.table-scroll { overflow-x: auto; }
 .table-scroll thead th { background: var(--bg-page); }
 
 /* Simge butonlar (tablo satır aksiyonları) */
@@ -822,23 +821,8 @@ table tbody tr:last-child td { border-bottom: none; }
 .sim-badge { background: var(--success); }
 
 /* Satış listesi tablosundaki kompakt cihaz/sim gösterimi (create-sale.php'nin
-   grid tabanlı .item-row'undan kasıtlı olarak ayrı tutulur, isim çakışmasını önlemek için).
-   Kalem sayısı ne olursa olsun satır yüksekliği sabit kalsın diye kendi iç scroll'u var -
-   aksi halde 20-30 kalemli bir satış tüm sayfayı devasa uzatıyordu. */
-.item-mini-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-height: 210px;
-    overflow-y: auto;
-    padding-right: 6px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
-}
-.item-mini-list::-webkit-scrollbar { width: 6px; }
-.item-mini-list::-webkit-scrollbar-track { background: transparent; }
-.item-mini-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
-.item-mini-list::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+   grid tabanlı .item-row'undan kasıtlı olarak ayrı tutulur, isim çakışmasını önlemek için). */
+.item-mini-list { display: flex; flex-direction: column; gap: 10px; }
 .item-mini { display: flex; flex-direction: column; gap: 3px; }
 .item-mini + .item-mini { padding-top: 10px; border-top: 1px dashed var(--border); }
 .item-mini strong { font-size: 12.5px; white-space: nowrap; }
