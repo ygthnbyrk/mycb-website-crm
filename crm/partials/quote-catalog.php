@@ -70,7 +70,7 @@ return [
         'images' => ['wifi-offline-1.jpg'],
     ],
     'harvox' => [
-        'label' => 'Harvox Online Kamera',
+        'label' => 'Online İç-Dış Kamera',
         'specs' => [
             '2K Görüntü Kalitesi',
             "512 GB'a Kadar Hafıza Desteği",
