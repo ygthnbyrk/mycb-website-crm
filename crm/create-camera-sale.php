@@ -20,7 +20,7 @@ $user_name = $_SESSION['user_name'];
     <title>Kamera Satışı - CRM</title>
 </head>
 <body>
-    <?php $active_page = 'create-camera-sale'; include 'partials/sidebar.php'; ?>
+    <?php $active_page = 'create-camera-sale'; include 'partials/sidebar-teknoloji.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">

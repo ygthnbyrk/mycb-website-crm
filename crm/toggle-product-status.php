@@ -14,7 +14,9 @@ $return = $_GET['return'] ?? '';
 if ($return !== '' && !preg_match('/^[A-Za-z0-9=&%.+_\-]*$/', $return)) {
     $return = '';
 }
-$redirect = 'products.php' . ($return !== '' ? '?' . $return : '');
+$allowed_redirects = ['products.php', 'teknoloji-urunler.php'];
+$base_page = in_array($_GET['from'] ?? '', $allowed_redirects, true) ? $_GET['from'] : 'products.php';
+$redirect = $base_page . ($return !== '' ? '?' . $return : '');
 
 // Bu hızlı işlem sadece Stokta <-> Pasif geçişi içindir; satış kaydı gerektiren
 // "Satıldı" durumu buradan değil, satış akışından yönetilir.

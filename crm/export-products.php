@@ -13,9 +13,12 @@ require_once __DIR__ . '/SimpleXLSXGen.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+// Bu export sadece Ürünler (Araç Takip / Telematik) sayfasından linklenir;
+// Kamera/Aksesuar/Hizmet Teknoloji tarafında yönetiliyor, buraya karışmasın.
 $stmt = $conn->prepare("
   SELECT model, product_name, serial_number, imei_number, cost_price, vat, total_cost, category, description
   FROM products
+  WHERE category = 'Telematik'
   ORDER BY created_at DESC
 ");
 $stmt->execute();

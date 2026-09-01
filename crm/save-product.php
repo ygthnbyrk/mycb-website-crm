@@ -6,6 +6,11 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Ürünler sayfası hem Araç Takip (Telematik) hem Teknoloji (Kamera/Aksesuar/Hizmet)
+// tarafından ayrı sayfalarda kullanılıyor; kaydettikten sonra geldiği sayfaya dönsün.
+$allowed_redirects = ['products.php', 'teknoloji-urunler.php'];
+$redirect_to = in_array($_POST['from'] ?? '', $allowed_redirects, true) ? $_POST['from'] : 'products.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_id = $_POST['product_id'] ?? '';
     $model = trim($_POST['model']);
@@ -26,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Zorunlu alan kontrolü
     if (empty($model) || empty($product_name) || ($imei_required && empty($imei_number)) || empty($category) || $cost_price < 0) {
         $_SESSION['error'] = 'Zorunlu alanları doldurun.';
-        header('Location: products.php');
+        header('Location: ' . $redirect_to);
         exit;
     }
 
@@ -40,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($check->get_result()->num_rows > 0) {
                 $_SESSION['error'] = 'Bu IMEI numarası ile kayıtlı başka bir ürün var.';
-                header('Location: products.php');
+                header('Location: ' . $redirect_to);
                 exit;
             }
             $check->close();
@@ -65,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($check->get_result()->num_rows > 0) {
                 $_SESSION['error'] = 'Bu IMEI numarası ile kayıtlı bir ürün zaten var!';
-                header('Location: products.php');
+                header('Location: ' . $redirect_to);
                 exit;
             }
             $check->close();
@@ -84,6 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
 }
 
-header('Location: products.php');
+header('Location: ' . $redirect_to);
 exit;
 ?>

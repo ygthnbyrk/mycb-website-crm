@@ -57,7 +57,12 @@ $stmt->close();
     <title>Müşteriler - CRM</title>
 </head>
 <body>
-    <?php $active_page = 'customers'; include 'partials/sidebar.php'; ?>
+    <?php
+    $active_page = 'customers';
+    // Müşteriler hem Araç Takip hem Teknoloji tarafından ortak kullanılıyor;
+    // en son hangi alandan gelindiyse o alanın menüsü gösterilsin.
+    include (($_SESSION['crm_zone'] ?? 'arac-takip') === 'teknoloji') ? 'partials/sidebar-teknoloji.php' : 'partials/sidebar.php';
+    ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">

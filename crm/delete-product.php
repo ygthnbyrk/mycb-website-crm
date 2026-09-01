@@ -7,11 +7,13 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $id = intval($_GET['id'] ?? 0);
+$allowed_redirects = ['products.php', 'teknoloji-urunler.php'];
+$redirect_to = in_array($_GET['from'] ?? '', $allowed_redirects, true) ? $_GET['from'] : 'products.php';
 
 if ($id > 0) {
     $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
+
     if ($stmt->execute()) {
         $_SESSION['success'] = 'Ürün başarıyla silindi.';
     } else {
@@ -22,6 +24,6 @@ if ($id > 0) {
     $_SESSION['error'] = 'Geçersiz ürün ID.';
 }
 
-header('Location: products.php');
+header('Location: ' . $redirect_to);
 exit;
 ?>

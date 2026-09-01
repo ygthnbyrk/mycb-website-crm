@@ -53,7 +53,7 @@ foreach ($rows as $r) {
     <title>Kamera Satış Listesi - CRM</title>
 </head>
 <body>
-    <?php $active_page = 'create-camera-sale'; include 'partials/sidebar.php'; ?>
+    <?php $active_page = 'camera-sales-list'; include 'partials/sidebar-teknoloji.php'; ?>
 
     <div class="main-content">
         <div class="top-bar">

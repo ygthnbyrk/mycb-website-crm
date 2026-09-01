@@ -63,8 +63,8 @@ $simcard_operator_filter = $_GET['simcard_operator'] ?? 'all';
 $simcard_company_filter = $_GET['simcard_company'] ?? 'all';
 $has_active_filter = $product_model_filter !== 'all' || $simcard_operator_filter !== 'all' || $simcard_company_filter !== 'all';
 
-// Model listesi
-$models = $conn->query("SELECT DISTINCT model FROM products ORDER BY model")->fetch_all(MYSQLI_ASSOC);
+// Model listesi (sadece araç takip/Telematik cihazları — Kamera/Aksesuar/Hizmet Teknoloji tarafında)
+$models = $conn->query("SELECT DISTINCT model FROM products WHERE category = 'Telematik' ORDER BY model")->fetch_all(MYSQLI_ASSOC);
 
 // Operatör listesi
 $operators = $conn->query("SELECT DISTINCT operator FROM simcards ORDER BY operator")->fetch_all(MYSQLI_ASSOC);
@@ -73,14 +73,14 @@ $operators = $conn->query("SELECT DISTINCT operator FROM simcards ORDER BY opera
 $companies = $conn->query("SELECT DISTINCT company FROM simcards ORDER BY company")->fetch_all(MYSQLI_ASSOC);
 
 // 1. ÜRÜN STOK
-$product_stock_sql = "SELECT COUNT(*) as total FROM products WHERE status = 'Stokta'";
+$product_stock_sql = "SELECT COUNT(*) as total FROM products WHERE status = 'Stokta' AND category = 'Telematik'";
 if ($product_model_filter !== 'all') {
     $product_stock_sql .= " AND model = '" . $conn->real_escape_string($product_model_filter) . "'";
 }
 $product_stock = $conn->query($product_stock_sql)->fetch_assoc()['total'];
 
 // 2. AKTİF ÜRÜNLER
-$active_products_sql = "SELECT COUNT(*) as total FROM products WHERE status = 'Satıldı'";
+$active_products_sql = "SELECT COUNT(*) as total FROM products WHERE status = 'Satıldı' AND category = 'Telematik'";
 if ($product_model_filter !== 'all') {
     $active_products_sql .= " AND model = '" . $conn->real_escape_string($product_model_filter) . "'";
 }
@@ -106,14 +106,17 @@ $active_simcards = $conn->query("SELECT COUNT(*) as count FROM simcards WHERE st
 
 
 // 5. YAKLAŞAN ÜRÜN YENİLEMELERİ (30 gün)
+// product_id üzerinden products.category = 'Telematik' ile eşleştiriyoruz ki Teknoloji
+// tarafının (Kamera Satışı) oluşturduğu abonelikler bu araç takip KPI'sine karışmasın.
 $today = date('Y-m-d');
 $upcoming_date = date('Y-m-d', strtotime('+30 days'));
-$upcoming_products_sql = "SELECT COUNT(*) as total FROM subscriptions
-                          WHERE status = 'Aktif'
-                          AND item_type = 'product'
-                          AND renewal_date BETWEEN '$today' AND '$upcoming_date'";
+$upcoming_products_sql = "SELECT COUNT(*) as total FROM subscriptions sub
+                          INNER JOIN products p ON p.id = sub.product_id AND p.category = 'Telematik'
+                          WHERE sub.status = 'Aktif'
+                          AND sub.item_type = 'product'
+                          AND sub.renewal_date BETWEEN '$today' AND '$upcoming_date'";
 if ($product_model_filter !== 'all') {
-    $upcoming_products_sql .= " AND item_name = '" . $conn->real_escape_string($product_model_filter) . "'";
+    $upcoming_products_sql .= " AND sub.item_name = '" . $conn->real_escape_string($product_model_filter) . "'";
 }
 $upcoming_products = $conn->query($upcoming_products_sql)->fetch_assoc()['total'];
 
@@ -132,7 +135,7 @@ if (!empty($where_renewal)) {
 $upcoming_simcards = $conn->query($upcoming_simcards_sql)->fetch_assoc()['total'];
 
 // DETAY VERİLERİ - ÜRÜN STOK DETAY
-$product_stock_detail_sql = "SELECT model, COUNT(*) as count FROM products WHERE status = 'Stokta'";
+$product_stock_detail_sql = "SELECT model, COUNT(*) as count FROM products WHERE status = 'Stokta' AND category = 'Telematik'";
 if ($product_model_filter !== 'all') {
     $product_stock_detail_sql .= " AND model = '" . $conn->real_escape_string($product_model_filter) . "'";
 }
@@ -140,7 +143,7 @@ $product_stock_detail_sql .= " GROUP BY model ORDER BY count DESC";
 $product_stock_detail = $conn->query($product_stock_detail_sql)->fetch_all(MYSQLI_ASSOC);
 
 // DETAY VERİLERİ - AKTİF ÜRÜNLER DETAY
-$active_products_detail_sql = "SELECT model, COUNT(*) as count FROM products WHERE status = 'Satıldı'";
+$active_products_detail_sql = "SELECT model, COUNT(*) as count FROM products WHERE status = 'Satıldı' AND category = 'Telematik'";
 if ($product_model_filter !== 'all') {
     $active_products_detail_sql .= " AND model = '" . $conn->real_escape_string($product_model_filter) . "'";
 }

@@ -11,47 +11,59 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 
-// Arama, Durum Filtresi ve Sayfalama
+// Bu sayfa Araç Takip (Telematik) tarafından tamamen ayrı: sadece Kamera/Aksesuar/Hizmet.
+$teknoloji_categories = ['Kamera', 'Aksesuar', 'Hizmet'];
+
+// Arama, Kategori/Durum Filtresi ve Sayfalama
 $search = $_GET['search'] ?? '';
 $status_filter = $_GET['status'] ?? '';
+$category_filter = in_array($_GET['category'] ?? '', $teknoloji_categories, true) ? $_GET['category'] : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $per_page = 25;
 $offset = ($page - 1) * $per_page;
 
-// Sayfadaki aktif filtreleri korumak için: Pasif/Aktif toggle sonrası aynı filtreye geri dönülsün
 $return_qs = http_build_query(array_filter([
     'search' => $search,
     'status' => $status_filter,
+    'category' => $category_filter,
     'page' => $page > 1 ? $page : '',
 ]));
 
-// KPI'lar (Kamera/Aksesuar/Hizmet artık Teknoloji > Ürünler tarafında yönetiliyor,
-// bu sayfa sadece Telematik/araç takip cihazlarını gösterir)
+$category_placeholders = implode(',', array_fill(0, count($teknoloji_categories), '?'));
+
+// KPI'lar
 $kpi_stmt = $conn->prepare("
     SELECT
         COUNT(*) as total_products,
         SUM(CASE WHEN status = 'Stokta' THEN 1 ELSE 0 END) as stock_products,
         SUM(CASE WHEN status = 'Pasif' THEN 1 ELSE 0 END) as passive_products,
-        SUM(CASE WHEN status = 'Satıldı' THEN 1 ELSE 0 END) as sold_products,
-        SUM(CASE WHEN status = 'Stokta' THEN total_cost ELSE 0 END) as stock_value
+        SUM(CASE WHEN status = 'Satıldı' THEN 1 ELSE 0 END) as sold_products
     FROM products
-    WHERE category = 'Telematik'
+    WHERE category IN ($category_placeholders)
 ");
+$kpi_stmt->bind_param(str_repeat('s', count($teknoloji_categories)), ...$teknoloji_categories);
 $kpi_stmt->execute();
 $kpi_result = $kpi_stmt->get_result()->fetch_assoc();
 $kpi_stmt->close();
 
-// Dinamik WHERE (arama + durum filtresi) — category = 'Telematik' her zaman sabit
-$where_conditions = ["category = 'Telematik'"];
-$params = [];
-$types = '';
+// Dinamik WHERE
+$where_conditions = ["category IN ($category_placeholders)"];
+$params = $teknoloji_categories;
+$types = str_repeat('s', count($teknoloji_categories));
 
 if (!empty($search)) {
-    $where_conditions[] = "(product_name LIKE ? OR imei_number LIKE ?)";
+    $where_conditions[] = "(product_name LIKE ? OR model LIKE ? OR imei_number LIKE ?)";
     $search_param = "%$search%";
     $params[] = $search_param;
     $params[] = $search_param;
-    $types .= 'ss';
+    $params[] = $search_param;
+    $types .= 'sss';
+}
+
+if ($category_filter !== '') {
+    $where_conditions[] = "category = ?";
+    $params[] = $category_filter;
+    $types .= 's';
 }
 
 if (in_array($status_filter, ['Stokta', 'Pasif', 'Satıldı'], true)) {
@@ -60,14 +72,12 @@ if (in_array($status_filter, ['Stokta', 'Pasif', 'Satıldı'], true)) {
     $types .= 's';
 }
 
-$where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+$where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
 // Toplam sayı
 $count_sql = "SELECT COUNT(*) as total FROM products $where_clause";
 $stmt = $conn->prepare($count_sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
-}
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $total_products = $stmt->get_result()->fetch_assoc()['total'];
 $total_pages = ceil($total_products / $per_page);
@@ -92,27 +102,22 @@ $stmt->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
-    <title>Ürünler - CRM</title>
+    <title>Ürünler - Teknoloji - CRM</title>
 </head>
 <body>
-    <?php $active_page = 'products'; include 'partials/sidebar.php'; ?>
+    <?php $active_page = 'teknoloji-urunler'; include 'partials/sidebar-teknoloji.php'; ?>
 
     <!-- Ana İçerik -->
     <div class="main-content">
         <div class="top-bar">
-            <h1><?php echo icon('package'); ?> Ürün Yönetimi</h1>
+            <h1><?php echo icon('cpu'); ?> Teknoloji Ürünleri</h1>
         </div>
 
-        <?php if(isset($_SESSION['success'])): ?>
-            <div class="alert alert-success">
-                <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
-            </div>
+        <?php if (isset($_SESSION['success'])): ?>
+            <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
         <?php endif; ?>
-
-        <?php if(isset($_SESSION['error'])): ?>
-            <div class="alert alert-danger">
-                <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
-            </div>
+        <?php if (isset($_SESSION['error'])): ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
         <?php endif; ?>
 
         <!-- KPI -->
@@ -133,19 +138,24 @@ $stmt->close();
                 <h3><?php echo $kpi_result['sold_products']; ?></h3>
                 <p>Satıldı</p>
             </div>
-            <div class="stat-box">
-                <h3>₺<?php echo number_format($kpi_result['stock_value'], 2); ?></h3>
-                <p>Stok Değeri</p>
-            </div>
+        </div>
+
+        <!-- Kategori Filtresi -->
+        <div class="filter-row" style="margin-bottom: 8px;">
+            <?php $sq = $search ? '&search=' . urlencode($search) : ''; $stq = $status_filter ? '&status=' . urlencode($status_filter) : ''; ?>
+            <a href="?category=<?php echo $sq . $stq; ?>" class="btn btn-light <?php echo $category_filter === '' ? 'active' : ''; ?>">Tüm Kategoriler</a>
+            <a href="?category=Kamera<?php echo $sq . $stq; ?>" class="btn btn-light <?php echo $category_filter === 'Kamera' ? 'active' : ''; ?>">Kamera</a>
+            <a href="?category=Aksesuar<?php echo $sq . $stq; ?>" class="btn btn-light <?php echo $category_filter === 'Aksesuar' ? 'active' : ''; ?>">Aksesuar</a>
+            <a href="?category=Hizmet<?php echo $sq . $stq; ?>" class="btn btn-light <?php echo $category_filter === 'Hizmet' ? 'active' : ''; ?>">Hizmet</a>
         </div>
 
         <!-- Durum Filtresi -->
         <div class="filter-row" style="margin-bottom: 12px;">
-            <?php $sq = $search ? '&search=' . urlencode($search) : ''; ?>
-            <a href="?status=<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
-            <a href="?status=Stokta<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
-            <a href="?status=Pasif<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Pasif' ? 'active' : ''; ?>">Pasif</a>
-            <a href="?status=Satıldı<?php echo $sq; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
+            <?php $cq = $category_filter ? '&category=' . urlencode($category_filter) : ''; ?>
+            <a href="?status=<?php echo $sq . $cq; ?>" class="btn btn-light <?php echo $status_filter === '' ? 'active' : ''; ?>">Tümü</a>
+            <a href="?status=Stokta<?php echo $sq . $cq; ?>" class="btn btn-light <?php echo $status_filter === 'Stokta' ? 'active' : ''; ?>">Stoktakiler</a>
+            <a href="?status=Pasif<?php echo $sq . $cq; ?>" class="btn btn-light <?php echo $status_filter === 'Pasif' ? 'active' : ''; ?>">Pasif</a>
+            <a href="?status=Satıldı<?php echo $sq . $cq; ?>" class="btn btn-light <?php echo $status_filter === 'Satıldı' ? 'active' : ''; ?>">Satılanlar</a>
         </div>
 
         <!-- Aksiyon Çubuğu -->
@@ -153,21 +163,16 @@ $stmt->close();
             <div class="search-box">
                 <form method="GET" style="display: flex; gap: 10px; width: 100%;">
                     <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
-                    <input type="text" name="search" class="search-input" placeholder="Ürün adı veya IMEI ara..." value="<?php echo htmlspecialchars($search); ?>">
+                    <input type="hidden" name="category" value="<?php echo htmlspecialchars($category_filter); ?>">
+                    <input type="text" name="search" class="search-input" placeholder="Ürün, model veya IMEI ara..." value="<?php echo htmlspecialchars($search); ?>">
                     <button type="submit" class="btn btn-primary"><?php echo icon('search'); ?> Ara</button>
-                    <?php if($search): ?>
-                        <a href="?status=<?php echo htmlspecialchars($status_filter); ?>" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
+                    <?php if ($search): ?>
+                        <a href="?status=<?php echo htmlspecialchars($status_filter) . $cq; ?>" class="btn btn-secondary"><?php echo icon('x'); ?> Temizle</a>
                     <?php endif; ?>
                 </form>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button onclick="openModal()" class="btn btn-primary"><?php echo icon('plus'); ?> Ürün Ekle</button>
-                <a href="export-products.php" class="btn btn-secondary">Excel İndir</a>
-                <a href="sample-products-template.php" class="btn btn-secondary">Şablon İndir</a>
-                <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary"><?php echo icon('upload'); ?> Excel Yükle</button>
-                <form id="importForm" method="POST" action="import-products.php" enctype="multipart/form-data" style="display: none;">
-                    <input type="file" id="importFile" name="excel_file" accept=".xlsx,.xls" onchange="this.form.submit()">
-                </form>
             </div>
         </div>
 
@@ -177,26 +182,33 @@ $stmt->close();
                 <thead>
                     <tr>
                         <th>Ürün</th>
-                        <th>IMEI Numarası</th>
+                        <th>Kategori</th>
+                        <th>IMEI / Seri</th>
                         <th>Fiyat</th>
                         <th>Durum</th>
                         <th style="text-align: center;">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if($products->num_rows > 0): ?>
-                        <?php while($product = $products->fetch_assoc()): ?>
+                    <?php if ($products->num_rows > 0): ?>
+                        <?php while ($product = $products->fetch_assoc()): ?>
                             <tr>
                                 <td>
                                     <strong><?php echo htmlspecialchars($product['product_name']); ?></strong><br>
                                     <small style="color: var(--text-muted);"><?php echo htmlspecialchars($product['model']); ?></small>
                                 </td>
-                                <td><?php echo $product['imei_number'] !== null ? htmlspecialchars($product['imei_number']) : '<span style="color:var(--text-muted);">—</span>'; ?></td>
+                                <td><span class="badge badge-gray"><?php echo htmlspecialchars($product['category']); ?></span></td>
+                                <td>
+                                    <?php
+                                        $identifier = $product['imei_number'] ?: $product['serial_number'];
+                                        echo $identifier ? htmlspecialchars($identifier) : '<span style="color:var(--text-muted);">—</span>';
+                                    ?>
+                                </td>
                                 <td><strong>₺<?php echo number_format($product['total_cost'], 2); ?></strong></td>
                                 <td>
-                                    <?php if($product['status'] == 'Stokta'): ?>
+                                    <?php if ($product['status'] == 'Stokta'): ?>
                                         <span class="badge badge-green">Stokta</span>
-                                    <?php elseif($product['status'] == 'Pasif'): ?>
+                                    <?php elseif ($product['status'] == 'Pasif'): ?>
                                         <span class="badge badge-orange">Pasif</span>
                                     <?php else: ?>
                                         <span class="badge badge-red">Satıldı</span>
@@ -217,8 +229,8 @@ $stmt->close();
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="5" class="no-data">
-                                <?php echo ($search || $status_filter) ? "Filtrelere uygun sonuç bulunamadı." : "Henüz ürün eklenmemiş."; ?>
+                            <td colspan="6" class="no-data">
+                                <?php echo ($search || $status_filter || $category_filter) ? "Filtrelere uygun sonuç bulunamadı." : "Henüz ürün eklenmemiş."; ?>
                             </td>
                         </tr>
                     <?php endif; ?>
@@ -228,9 +240,10 @@ $stmt->close();
 
         <!-- Sayfalama -->
         <?php
-        echo renderPagination($page, $total_pages, 'products.php', [
+        echo renderPagination($page, $total_pages, 'teknoloji-urunler.php', [
             'search' => $search,
-            'status' => $status_filter
+            'status' => $status_filter,
+            'category' => $category_filter,
         ]);
         ?>
     </div>
@@ -244,17 +257,26 @@ $stmt->close();
             </div>
             <form id="productForm" method="POST" action="save-product.php">
                 <input type="hidden" id="product_id" name="product_id" value="">
-                
+                <input type="hidden" name="from" value="teknoloji-urunler.php">
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Model <span class="required">*</span></label>
                         <select id="model" name="model" required>
                             <option value="">Seçiniz</option>
-                            <option value="T0">T0</option>
-                            <option value="T15">T15</option>
-                            <option value="P56">P56</option>
-                            <option value="DBA">DBA</option>
-                            <option value="Moto22">Moto22</option>
+                            <option value="WT-95A">WT-95A</option>
+                            <option value="WT-95C">WT-95C</option>
+                            <option value="WT625A">WT625A</option>
+                            <option value="Trio Dashcam">Trio Dashcam</option>
+                            <option value="İç-Dış 2K Smart Dashcam">İç-Dış 2K Smart Dashcam</option>
+                            <option value="SD Kart 125 GB">SD Kart 125 GB</option>
+                            <option value="SD Kart 256 GB">SD Kart 256 GB</option>
+                            <option value="SD Kart 512 GB">SD Kart 512 GB</option>
+                            <option value="3M Kablo">3M Kablo</option>
+                            <option value="5M Kablo">5M Kablo</option>
+                            <option value="7M Kablo">7M Kablo</option>
+                            <option value="10M Kablo">10M Kablo</option>
+                            <option value="Montaj">Montaj</option>
                         </select>
                     </div>
 
@@ -262,50 +284,53 @@ $stmt->close();
                         <label>Kategori <span class="required">*</span></label>
                         <select id="category" name="category" required>
                             <option value="">Seçiniz</option>
-                            <option value="Telematik">Telematik</option>
+                            <option value="Kamera">Kamera</option>
+                            <option value="Aksesuar">Aksesuar</option>
+                            <option value="Hizmet">Hizmet</option>
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Ürün Adı <span class="required">*</span></label>
                     <input type="text" id="product_name" name="product_name" required>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Seri Numarası</label>
                         <input type="text" id="serial_number" name="serial_number">
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>IMEI Numarası <span class="required">*</span></label>
-                        <input type="text" id="imei_number" name="imei_number" required>
+                        <label>IMEI Numarası</label>
+                        <input type="text" id="imei_number" name="imei_number">
+                        <small style="color: var(--text-muted);">İsteğe bağlı — kablo/Montaj gibi kalemlerde boş bırakabilirsiniz.</small>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Maliyet Fiyatı (₺) <span class="required">*</span></label>
                         <input type="number" step="0.01" id="cost_price" name="cost_price" required onkeyup="calculateTotal()">
                     </div>
-                    
+
                     <div class="form-group">
                         <label>KDV (%20)</label>
                         <input type="number" step="0.01" id="vat" name="vat" readonly>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Toplam Maliyet (₺)</label>
                     <input type="number" step="0.01" id="total_cost" name="total_cost" readonly>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Açıklama</label>
                     <textarea id="description" name="description" rows="3"></textarea>
                 </div>
-                
+
                 <button type="submit" class="btn btn-primary" style="width: 100%;"><?php echo icon('check'); ?> Kaydet</button>
             </form>
         </div>
@@ -375,7 +400,7 @@ $stmt->close();
 
         function deleteProduct(id) {
             if (confirm('Bu ürünü silmek istediğinize emin misiniz?')) {
-                window.location.href = 'delete-product.php?id=' + encodeURIComponent(id);
+                window.location.href = 'delete-product.php?id=' + encodeURIComponent(id) + '&from=teknoloji-urunler.php';
             }
         }
 
@@ -384,7 +409,7 @@ $stmt->close();
                 ? 'Bu ürünü pasife almak istediğinizden emin misiniz? Stok listesinde görünmeyecek.'
                 : 'Bu ürünü tekrar stoğa almak istediğinizden emin misiniz?';
             if (confirm(msg)) {
-                let url = 'toggle-product-status.php?id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status);
+                let url = 'toggle-product-status.php?id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status) + '&from=teknoloji-urunler.php';
                 if (returnQs) url += '&return=' + encodeURIComponent(returnQs);
                 window.location.href = url;
             }
