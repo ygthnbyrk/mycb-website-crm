@@ -43,7 +43,7 @@ if (($_SESSION['user_role'] ?? '') === 'admin') {
                 <span><?php echo $item['label']; ?></span>
             </a>
         <?php endforeach; ?>
-        <a href="teknoloji.php" class="nav-item">
+        <a href="teknoloji.php" class="nav-item" style="margin-bottom: 14px;">
             <?php echo icon('cpu'); ?>
             <span>Teknoloji'ye Geç</span>
         </a>

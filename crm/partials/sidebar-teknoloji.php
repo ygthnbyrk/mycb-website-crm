@@ -35,7 +35,7 @@ $nav_items = [
                 <span><?php echo $item['label']; ?></span>
             </a>
         <?php endforeach; ?>
-        <a href="hub.php" class="nav-item">
+        <a href="dashboard.php" class="nav-item">
             <?php echo icon('chevron-left'); ?>
             <span>Araç Takip'e Dön</span>
         </a>
