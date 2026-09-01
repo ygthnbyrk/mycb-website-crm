@@ -43,6 +43,10 @@ if (($_SESSION['user_role'] ?? '') === 'admin') {
                 <span><?php echo $item['label']; ?></span>
             </a>
         <?php endforeach; ?>
+        <a href="teknoloji.php" class="nav-item">
+            <?php echo icon('cpu'); ?>
+            <span>Teknoloji'ye Geç</span>
+        </a>
         <a href="logout.php" class="nav-item nav-logout">
             <?php echo icon('logout'); ?>
             <span>Çıkış Yap</span>
