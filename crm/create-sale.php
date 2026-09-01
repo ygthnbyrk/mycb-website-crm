@@ -26,6 +26,7 @@ $user_name = $_SESSION['user_name'];
     <div class="main-content">
         <div class="top-bar">
             <h1><?php echo icon('dollar'); ?> Yeni Satış Oluştur</h1>
+            <a href="create-camera-sale.php" class="btn btn-secondary"><?php echo icon('cpu'); ?> Kamera Satışı</a>
         </div>
 
         <form id="saleForm" method="POST" action="save-sale.php">

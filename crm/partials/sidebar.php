@@ -16,6 +16,8 @@ $nav_items = [
     ['page' => 'simcards',           'href' => 'simcards.php',           'icon' => 'sim',     'label' => 'Sim Kartlar'],
     ['page' => 'create-sale',        'href' => 'create-sale.php',        'icon' => 'dollar',  'label' => 'Satış'],
     ['page' => 'sales-list',         'href' => 'sales-list.php',         'icon' => 'list',    'label' => 'Satış Listesi'],
+    ['page' => 'create-camera-sale', 'href' => 'create-camera-sale.php', 'icon' => 'cpu',     'label' => 'Kamera Satışı',
+        'group' => ['create-camera-sale', 'camera-sales-list']],
     ['page' => 'subscriptions',      'href' => 'subscriptions.php',      'icon' => 'refresh', 'label' => 'Abonelikler'],
     ['page' => 'bulk-uploads',       'href' => 'bulk-uploads.php',       'icon' => 'upload',  'label' => 'Toplu Yüklemeler',
         'group' => ['bulk-uploads', 'bulk-sales-upload', 'subscription-renewal']],

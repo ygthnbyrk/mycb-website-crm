@@ -189,7 +189,7 @@ $stmt->close();
                                     <strong><?php echo htmlspecialchars($product['product_name']); ?></strong><br>
                                     <small style="color: var(--text-muted);"><?php echo htmlspecialchars($product['model']); ?></small>
                                 </td>
-                                <td><?php echo htmlspecialchars($product['imei_number']); ?></td>
+                                <td><?php echo $product['imei_number'] !== null ? htmlspecialchars($product['imei_number']) : '<span style="color:var(--text-muted);">—</span>'; ?></td>
                                 <td><strong>₺<?php echo number_format($product['total_cost'], 2); ?></strong></td>
                                 <td>
                                     <?php if($product['status'] == 'Stokta'): ?>
@@ -257,19 +257,26 @@ $stmt->close();
                             <option value="DBA">DBA</option>
                             <option value="Moto22">Moto22</option>
                             <option value="Trio Dashcam">Trio Dashcam</option>
+                            <option value="İç-Dış 2K Smart Dashcam">İç-Dış 2K Smart Dashcam</option>
                             <option value="SD Kart 125 GB">SD Kart 125 GB</option>
                             <option value="SD Kart 256 GB">SD Kart 256 GB</option>
                             <option value="SD Kart 512 GB">SD Kart 512 GB</option>
+                            <option value="3M Kablo">3M Kablo</option>
+                            <option value="5M Kablo">5M Kablo</option>
+                            <option value="7M Kablo">7M Kablo</option>
+                            <option value="10M Kablo">10M Kablo</option>
+                            <option value="Montaj">Montaj</option>
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Kategori <span class="required">*</span></label>
-                        <select id="category" name="category" required>
+                        <select id="category" name="category" required onchange="toggleImeiRequired()">
                             <option value="">Seçiniz</option>
                             <option value="Telematik">Telematik</option>
                             <option value="Kamera">Kamera</option>
                             <option value="Aksesuar">Aksesuar</option>
+                            <option value="Hizmet">Hizmet</option>
                         </select>
                     </div>
                 </div>
@@ -286,8 +293,9 @@ $stmt->close();
                     </div>
                     
                     <div class="form-group">
-                        <label>IMEI Numarası <span class="required">*</span></label>
+                        <label>IMEI Numarası <span class="required" id="imei_required_mark">*</span></label>
                         <input type="text" id="imei_number" name="imei_number" required>
+                        <small id="imei_optional_hint" style="display:none; color: var(--text-muted);">Telematik dışı kategorilerde (Aksesuar/Hizmet/Kamera) isteğe bağlıdır.</small>
                     </div>
                 </div>
                 
@@ -328,6 +336,18 @@ $stmt->close();
             document.getElementById('total_cost').value = total.toFixed(2);
         }
 
+        function toggleImeiRequired() {
+            const category = document.getElementById('category').value;
+            const imeiInput = document.getElementById('imei_number');
+            const requiredMark = document.getElementById('imei_required_mark');
+            const optionalHint = document.getElementById('imei_optional_hint');
+            const needsImei = category === 'Telematik';
+
+            imeiInput.required = needsImei;
+            requiredMark.style.display = needsImei ? 'inline' : 'none';
+            optionalHint.style.display = needsImei ? 'none' : 'block';
+        }
+
         function openModal(mode = 'create') {
             const modal = document.getElementById('productModal');
             const title = document.getElementById('modalTitle');
@@ -338,6 +358,7 @@ $stmt->close();
                 form.reset();
                 document.getElementById('product_id').value = '';
                 calculateTotal();
+                toggleImeiRequired();
             } else {
                 title.textContent = 'Ürün Düzenle';
             }
@@ -374,6 +395,7 @@ $stmt->close();
                 document.getElementById('total_cost').value = data.total_cost ?? '';
                 document.getElementById('category').value = data.category || '';
                 document.getElementById('description').value = data.description || '';
+                toggleImeiRequired();
 
             } catch (err) {
                 alert('Bağlantı/işleme hatası: ' + err.message);
