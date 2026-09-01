@@ -100,7 +100,7 @@ svg { width: 1em; height: 1em; vertical-align: -0.125em; flex-shrink: 0; }
 
 .nav-item.active { background: var(--accent-soft); color: var(--accent); }
 
-.nav-item.nav-logout { margin-top: auto; }
+.nav-item.nav-switch { margin-top: auto; }
 
 /* ---------- Main content ---------- */
 .main-content { margin-left: var(--sidebar-w); padding: 32px; max-width: 1400px; }
