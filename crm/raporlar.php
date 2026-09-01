@@ -1,6 +1,7 @@
 <?php
 require_once 'config.php';
 require_once 'partials/icons.php';
+require_once 'partials/custom-reports.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -189,6 +190,8 @@ foreach ($all_ops as $i => $row) {
 
 $avg_products_month = round($total_products_sold / 12);
 $avg_simcards_month = round($total_simcards_sold / 12);
+
+$custom_reports = get_custom_reports();
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -299,6 +302,35 @@ $avg_simcards_month = round($total_simcards_sold / 12);
                 <?php else: ?>
                     <div class="no-data">Bu yıl için veri yok</div>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="detail-card" style="margin-top:16px;">
+            <h3><?php echo icon('file-text'); ?> Özel Raporlar</h3>
+            <p class="report-section-hint">İhtiyaç duydukça çalıştırıp doğrudan Excel olarak indirebileceğiniz hazır raporlar.</p>
+            <div class="report-catalog">
+                <?php foreach ($custom_reports as $slug => $def): ?>
+                    <div class="report-card">
+                        <div class="icon"><?php echo icon($def['icon']); ?></div>
+                        <h4><?php echo htmlspecialchars($def['title']); ?></h4>
+                        <p><?php echo htmlspecialchars($def['description']); ?></p>
+                        <form method="get" action="export-ozel-rapor.php" class="report-card-form">
+                            <input type="hidden" name="rapor" value="<?php echo htmlspecialchars($slug); ?>">
+                            <?php foreach (($def['params'] ?? []) as $key => $spec): ?>
+                                <label class="report-param">
+                                    <span><?php echo htmlspecialchars($spec['label']); ?></span>
+                                    <input
+                                        type="<?php echo htmlspecialchars($spec['type']); ?>"
+                                        name="<?php echo htmlspecialchars($key); ?>"
+                                        value="<?php echo htmlspecialchars((string)$spec['default']); ?>"
+                                        <?php if (isset($spec['min'])): ?>min="<?php echo (int)$spec['min']; ?>"<?php endif; ?>
+                                    >
+                                </label>
+                            <?php endforeach; ?>
+                            <button type="submit" class="btn btn-secondary"><?php echo icon('download'); ?> Excel'e Aktar</button>
+                        </form>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
