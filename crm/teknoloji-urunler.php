@@ -311,6 +311,12 @@ $stmt->close();
                     </div>
                 </div>
 
+                <div class="form-group" id="quantity_group">
+                    <label>Adet</label>
+                    <input type="number" step="1" min="1" id="quantity" name="quantity" value="1">
+                    <small style="color: var(--text-muted);">Aynı üründen birden fazla stoğa eklemek için adet girin (IMEI'li ürünlerde adet 1 olmalı).</small>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Maliyet Fiyatı (₺) <span class="required">*</span></label>
@@ -384,9 +390,12 @@ $stmt->close();
                 document.getElementById('product_id').value = '';
                 document.getElementById('model_custom').style.display = 'none';
                 document.getElementById('model_custom').required = false;
+                document.getElementById('quantity_group').style.display = 'block';
+                document.getElementById('quantity').value = '1';
                 calculateTotal();
             } else {
                 title.textContent = 'Ürün Düzenle';
+                document.getElementById('quantity_group').style.display = 'none';
             }
             modal.classList.add('show');
         }
@@ -456,6 +465,14 @@ $stmt->close();
         }
 
         document.getElementById('productForm').addEventListener('submit', function (e) {
+            const imei = document.getElementById('imei_number').value.trim();
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            if (!document.getElementById('product_id').value && imei && quantity > 1) {
+                e.preventDefault();
+                alert('IMEI numarası girilen ürünlerde adet 1 olmalı (her IMEI tekil bir cihazdır). Birden fazla eklemek için IMEI\'yi boş bırakın veya ürünleri tek tek girin.');
+                return;
+            }
+
             const sel = document.getElementById('model');
             if (sel.value === '__custom__') {
                 const customVal = document.getElementById('model_custom').value.trim();

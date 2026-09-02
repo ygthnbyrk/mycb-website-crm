@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = trim($_POST['category']);
     $description = trim($_POST['description']) ?: null;
     $user_id = $_SESSION['user_id'];
+    $quantity = max(1, intval($_POST['quantity'] ?? 1));
 
     // IMEI sadece Telematik (araç takip) kategorisinde zorunlu; Aksesuar/Hizmet/Kamera
     // kalemlerinin (kablo, Montaj, bazı kameralar) IMEI'si olmaz.
@@ -76,11 +77,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $check->close();
         }
 
+        // Aynı IMEI'yi birden fazla kayda kopyalamamak için: IMEI girilmişse adet 1'e sabitlenir.
+        if (!empty($imei_number)) {
+            $quantity = 1;
+        }
+
         $stmt = $conn->prepare("INSERT INTO products (model, product_name, serial_number, imei_number, cost_price, vat, total_cost, category, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssdddssi", $model, $product_name, $serial_number, $imei_number, $cost_price, $vat, $total_cost, $category, $description, $user_id);
-        
-        if ($stmt->execute()) {
-            $_SESSION['success'] = 'Ürün başarıyla eklendi.';
+
+        $inserted = 0;
+        for ($i = 0; $i < $quantity; $i++) {
+            if ($stmt->execute()) {
+                $inserted++;
+            }
+        }
+
+        if ($inserted === $quantity) {
+            $_SESSION['success'] = $quantity > 1 ? "$inserted adet ürün başarıyla eklendi." : 'Ürün başarıyla eklendi.';
+        } elseif ($inserted > 0) {
+            $_SESSION['error'] = "$inserted / $quantity ürün eklendi, bir kısmında hata oluştu.";
         } else {
             $_SESSION['error'] = 'Ürün eklenirken hata oluştu.';
         }
