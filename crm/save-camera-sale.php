@@ -42,14 +42,15 @@ if (!empty($items)) {
         $item_name = trim($item['item_name'] ?? '');
         $category = trim($item['category'] ?? '') ?: null;
         $cost_price = isset($item['cost_price']) && $item['cost_price'] !== '' ? floatval($item['cost_price']) : null;
+        $sale_price = isset($item['sale_price']) && $item['sale_price'] !== '' ? floatval($item['sale_price']) : null;
         $quantity = !empty($item['quantity']) ? intval($item['quantity']) : 1;
 
         if ($item_name === '') {
             continue;
         }
 
-        $stmt_item = $conn->prepare("INSERT INTO camera_sale_items (camera_sale_id, product_id, category, item_name, cost_price, quantity) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt_item->bind_param('iissdi', $camera_sale_id, $product_id, $category, $item_name, $cost_price, $quantity);
+        $stmt_item = $conn->prepare("INSERT INTO camera_sale_items (camera_sale_id, product_id, category, item_name, cost_price, sale_price, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt_item->bind_param('iissddi', $camera_sale_id, $product_id, $category, $item_name, $cost_price, $sale_price, $quantity);
         $stmt_item->execute();
         $stmt_item->close();
 

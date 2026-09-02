@@ -18,6 +18,9 @@ $user_name = $_SESSION['user_name'];
     <link rel="stylesheet" href="assets/css/design-system.css">
     <link rel="stylesheet" href="assets/css/responsive.css">
     <title>Kamera Satışı - CRM</title>
+    <style>
+        #item_list .item-row { grid-template-columns: 1.8fr 1fr 0.9fr 0.9fr 0.6fr 50px; }
+    </style>
 </head>
 <body>
     <?php $active_page = 'create-camera-sale'; include 'partials/sidebar-teknoloji.php'; ?>
@@ -87,12 +90,28 @@ $user_name = $_SESSION['user_name'];
                         <div>Kalem Adı</div>
                         <div>Kategori</div>
                         <div>Maliyet (₺)</div>
+                        <div>Satış Fiyatı (₺)</div>
                         <div>Adet</div>
                         <div></div>
                     </div>
                     <div id="item_rows"></div>
                 </div>
                 <div id="no_items" class="no-items">Henüz kalem eklenmedi. Kayıtlı bir ürün/hizmet arayın ya da serbest kalem ekleyin.</div>
+
+                <div id="items_summary" class="summary-box" style="display: none; margin-top: 16px;">
+                    <div class="summary-row">
+                        <span>Toplam Maliyet:</span>
+                        <strong id="summary_cost">₺0,00</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Toplam Satış:</span>
+                        <strong id="summary_sale">₺0,00</strong>
+                    </div>
+                    <div class="summary-row total">
+                        <span>KÂR:</span>
+                        <strong id="summary_profit">₺0,00</strong>
+                    </div>
+                </div>
             </div>
 
             <!-- Notlar -->
@@ -204,6 +223,7 @@ $user_name = $_SESSION['user_name'];
                 item_name: p.model,
                 category: p.category,
                 cost_price: p.cost_price || 0,
+                sale_price: 0,
                 quantity: 1
             });
             renderItems();
@@ -218,6 +238,7 @@ $user_name = $_SESSION['user_name'];
                 item_name: '',
                 category: '',
                 cost_price: 0,
+                sale_price: 0,
                 quantity: 1
             });
             renderItems();
@@ -235,6 +256,7 @@ $user_name = $_SESSION['user_name'];
             if (items.length === 0) {
                 list.style.display = 'none';
                 noItems.style.display = 'block';
+                document.getElementById('items_summary').style.display = 'none';
                 return;
             }
 
@@ -250,16 +272,32 @@ $user_name = $_SESSION['user_name'];
                         <input type="text" placeholder="Kategori" value="${escapeHtml(it.category)}" onchange="findItem(${it.seq}).category = this.value">
                     </div>
                     <div>
-                        <input type="number" step="0.01" min="0" value="${it.cost_price}" onchange="findItem(${it.seq}).cost_price = parseFloat(this.value) || 0">
+                        <input type="number" step="0.01" min="0" value="${it.cost_price}" onchange="findItem(${it.seq}).cost_price = parseFloat(this.value) || 0; updateSummary();">
                     </div>
                     <div>
-                        <input type="number" step="1" min="1" value="${it.quantity}" onchange="findItem(${it.seq}).quantity = parseInt(this.value) || 1">
+                        <input type="number" step="0.01" min="0" value="${it.sale_price}" onchange="findItem(${it.seq}).sale_price = parseFloat(this.value) || 0; updateSummary();">
+                    </div>
+                    <div>
+                        <input type="number" step="1" min="1" value="${it.quantity}" onchange="findItem(${it.seq}).quantity = parseInt(this.value) || 1; updateSummary();">
                     </div>
                     <div>
                         <button type="button" onclick="removeItem(${it.seq})" class="icon-btn btn-delete" title="Kaldır">${icon_trash()}</button>
                     </div>
                 </div>
             `).join('');
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const totalCost = items.reduce((sum, it) => sum + (it.cost_price * it.quantity), 0);
+            const totalSale = items.reduce((sum, it) => sum + (it.sale_price * it.quantity), 0);
+            const profit = totalSale - totalCost;
+
+            document.getElementById('summary_cost').textContent = '₺' + totalCost.toFixed(2);
+            document.getElementById('summary_sale').textContent = '₺' + totalSale.toFixed(2);
+            document.getElementById('summary_profit').textContent = '₺' + profit.toFixed(2);
+            document.getElementById('items_summary').style.display = 'block';
         }
 
         function icon_trash() {

@@ -11,7 +11,7 @@ $user_name = $_SESSION['user_name'];
 $search = trim($_GET['search'] ?? '');
 
 $sql = "SELECT cs.id as sale_id, cs.sale_date, cs.notes, c.name as customer_name, c.tax_number,
-               csi.item_name, csi.category, csi.cost_price, csi.quantity
+               csi.item_name, csi.category, csi.cost_price, csi.sale_price, csi.quantity
         FROM camera_sales cs
         JOIN customers c ON cs.customer_id = c.id
         LEFT JOIN camera_sale_items csi ON csi.camera_sale_id = cs.id
@@ -39,9 +39,13 @@ $stmt->close();
 
 $total_sales = count(array_unique(array_column($rows, 'sale_id')));
 $total_cost = 0;
+$total_revenue = 0;
 foreach ($rows as $r) {
-    $total_cost += (float)($r['cost_price'] ?? 0) * (int)($r['quantity'] ?? 1);
+    $qty = (int)($r['quantity'] ?? 1);
+    $total_cost += (float)($r['cost_price'] ?? 0) * $qty;
+    $total_revenue += (float)($r['sale_price'] ?? 0) * $qty;
 }
+$total_profit = $total_revenue - $total_cost;
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -79,6 +83,16 @@ foreach ($rows as $r) {
                 <h3>Toplam Maliyet</h3>
                 <div class="number"><?php echo number_format($total_cost, 0, ',', '.'); ?> ₺</div>
             </div>
+            <div class="stat-card blue">
+                <div class="icon"><?php echo icon('dollar'); ?></div>
+                <h3>Toplam Satış</h3>
+                <div class="number"><?php echo number_format($total_revenue, 0, ',', '.'); ?> ₺</div>
+            </div>
+            <div class="stat-card green">
+                <div class="icon"><?php echo icon('dollar'); ?></div>
+                <h3>Kâr</h3>
+                <div class="number"><?php echo number_format($total_profit, 0, ',', '.'); ?> ₺</div>
+            </div>
         </div>
 
         <form method="get" class="filter-row" style="margin-bottom: 16px;">
@@ -102,6 +116,8 @@ foreach ($rows as $r) {
                                 <th>Kalem</th>
                                 <th>Kategori</th>
                                 <th style="text-align:right;">Maliyet</th>
+                                <th style="text-align:right;">Satış Fiyatı</th>
+                                <th style="text-align:right;">Kâr</th>
                                 <th style="text-align:right;">Adet</th>
                             </tr>
                         </thead>
@@ -116,6 +132,8 @@ foreach ($rows as $r) {
                                     <td><?php echo $r['item_name'] !== null ? htmlspecialchars($r['item_name']) : '<span style="color:var(--text-muted);">—</span>'; ?></td>
                                     <td><?php echo htmlspecialchars($r['category'] ?? ''); ?></td>
                                     <td style="text-align:right;"><?php echo $r['cost_price'] !== null ? number_format((float)$r['cost_price'], 2, ',', '.') . ' ₺' : '—'; ?></td>
+                                    <td style="text-align:right;"><?php echo $r['sale_price'] !== null ? number_format((float)$r['sale_price'], 2, ',', '.') . ' ₺' : '—'; ?></td>
+                                    <td style="text-align:right;"><?php echo ($r['sale_price'] !== null && $r['cost_price'] !== null) ? number_format((float)$r['sale_price'] - (float)$r['cost_price'], 2, ',', '.') . ' ₺' : '—'; ?></td>
                                     <td style="text-align:right;"><?php echo $r['quantity'] !== null ? (int)$r['quantity'] : '—'; ?></td>
                                 </tr>
                             <?php endforeach; ?>
