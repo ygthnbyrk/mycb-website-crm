@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'camera-sale-helpers.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -34,44 +35,11 @@ if (!$stmt->execute()) {
 $camera_sale_id = $conn->insert_id;
 $stmt->close();
 
+$shortage_notes = [];
 if (!empty($items)) {
-    $renewal_date = date('Y-m-d', strtotime($sale_date . ' + 24 months'));
-
-    foreach ($items as $item) {
-        $product_id = !empty($item['product_id']) ? intval($item['product_id']) : null;
-        $item_name = trim($item['item_name'] ?? '');
-        $category = trim($item['category'] ?? '') ?: null;
-        $cost_price = isset($item['cost_price']) && $item['cost_price'] !== '' ? floatval($item['cost_price']) : null;
-        $sale_price = isset($item['sale_price']) && $item['sale_price'] !== '' ? floatval($item['sale_price']) : null;
-        $quantity = !empty($item['quantity']) ? intval($item['quantity']) : 1;
-
-        if ($item_name === '') {
-            continue;
-        }
-
-        $stmt_item = $conn->prepare("INSERT INTO camera_sale_items (camera_sale_id, product_id, category, item_name, cost_price, sale_price, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt_item->bind_param('iissddi', $camera_sale_id, $product_id, $category, $item_name, $cost_price, $sale_price, $quantity);
-        $stmt_item->execute();
-        $stmt_item->close();
-
-        // Kayıtlı ürün seçildiyse stok durumunu "Satıldı" yap (satış akışı dışındaki hızlı
-        // Stokta<->Pasif geçişi toggle-product-status.php'de zaten bu duruma dokunmuyor).
-        if ($product_id) {
-            $stmt_status = $conn->prepare("UPDATE products SET status = 'Satıldı' WHERE id = ?");
-            $stmt_status->bind_param('i', $product_id);
-            $stmt_status->execute();
-            $stmt_status->close();
-        }
-
-        // Abonelik oluştur - mevcut Abonelikler yapısıyla aynı mantık (24 ay / item_type=product)
-        $item_detail = $category ?? '';
-        $stmt_sub = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'product', ?, ?, ?, ?)");
-        $stmt_sub->bind_param('iiissss', $camera_sale_id, $customer_id, $product_id, $item_name, $item_detail, $sale_date, $renewal_date);
-        $stmt_sub->execute();
-        $stmt_sub->close();
-    }
+    $shortage_notes = saveCameraSaleItems($conn, $camera_sale_id, $customer_id, $sale_date, $items);
 }
 
-$_SESSION['success'] = 'Kamera satışı kaydedildi.';
+$_SESSION['success'] = 'Kamera satışı kaydedildi.' . (!empty($shortage_notes) ? ' UYARI: ' . implode(' ', $shortage_notes) : '');
 header('Location: camera-sales-list.php');
 exit;

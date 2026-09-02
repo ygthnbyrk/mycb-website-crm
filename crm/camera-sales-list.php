@@ -208,6 +208,7 @@ if (!empty($sales)) {
                                 <th style="text-align:right;">Satış Fiyatı</th>
                                 <th style="text-align:right;">Kâr</th>
                                 <th style="text-align:right;">Adet</th>
+                                <th style="text-align:center;">İşlem</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -224,6 +225,19 @@ if (!empty($sales)) {
                                         $sale_qty += $qty;
                                     }
                                     $sale_profit = $sale_revenue - $sale_cost;
+
+                                    // Aynı ürün (adet>1 satışlarda stok takibi için ayrı satırlarda tutulur)
+                                    // görüntüde tek satırda "×N" olarak birleştirilir.
+                                    $display_items = [];
+                                    foreach ($sale_items as $it) {
+                                        $key = $it['item_name'] . '|' . ($it['category'] ?? '') . '|' . $it['cost_price'] . '|' . $it['sale_price'] . '|' . ($it['registered_name'] ?? '');
+                                        if (isset($display_items[$key])) {
+                                            $display_items[$key]['quantity'] += (int)$it['quantity'];
+                                        } else {
+                                            $display_items[$key] = $it;
+                                            $display_items[$key]['quantity'] = (int)$it['quantity'];
+                                        }
+                                    }
                                 ?>
                                 <tr>
                                     <td style="white-space: nowrap;"><?php echo date('d.m.Y', strtotime($sale['sale_date'])); ?></td>
@@ -232,11 +246,11 @@ if (!empty($sales)) {
                                         <small style="color: var(--text-muted);"><?php echo htmlspecialchars($sale['tax_number']); ?></small>
                                     </td>
                                     <td>
-                                        <?php if (empty($sale_items)): ?>
+                                        <?php if (empty($display_items)): ?>
                                             <span style="color:var(--text-muted);">—</span>
                                         <?php else: ?>
                                             <div class="item-mini-list">
-                                                <?php foreach ($sale_items as $it): ?>
+                                                <?php foreach ($display_items as $it): ?>
                                                     <div class="item-mini">
                                                         <span class="item-badge"><?php echo htmlspecialchars($it['category'] ?: 'Kalem'); ?></span>
                                                         <strong><?php echo htmlspecialchars($it['item_name']); ?></strong>
@@ -257,6 +271,12 @@ if (!empty($sales)) {
                                     <td style="text-align:right;"><?php echo number_format($sale_revenue, 2, ',', '.'); ?> ₺</td>
                                     <td style="text-align:right;"><?php echo number_format($sale_profit, 2, ',', '.'); ?> ₺</td>
                                     <td style="text-align:right;"><?php echo $sale_qty; ?></td>
+                                    <td style="text-align:center;">
+                                        <div class="action-btns">
+                                            <button onclick="window.location.href='edit-camera-sale.php?id=<?php echo $sale['id']; ?>'" class="icon-btn btn-edit" title="Düzenle"><?php echo icon('edit'); ?></button>
+                                            <button onclick="if(confirm('Bu kamera satışını silmek istediğinizden emin misiniz? Bağlı ürünler stoğa geri eklenecek.')) window.location.href='delete-camera-sale.php?id=<?php echo $sale['id']; ?>'" class="icon-btn btn-delete" title="Sil"><?php echo icon('trash'); ?></button>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
