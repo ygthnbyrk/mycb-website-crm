@@ -262,14 +262,14 @@ $stmt->close();
                 <div class="form-row">
                     <div class="form-group">
                         <label>Model <span class="required">*</span></label>
-                        <select id="model" name="model" required>
+                        <select id="model" name="model" onchange="toggleCustomModel()" required>
                             <option value="">Seçiniz</option>
                             <option value="WT-95A">WT-95A</option>
                             <option value="WT-95C">WT-95C</option>
                             <option value="WT625A">WT625A</option>
                             <option value="Trio Dashcam">Trio Dashcam</option>
                             <option value="İç-Dış 2K Smart Dashcam">İç-Dış 2K Smart Dashcam</option>
-                            <option value="SD Kart 125 GB">SD Kart 125 GB</option>
+                            <option value="SD Kart 128 GB">SD Kart 128 GB</option>
                             <option value="SD Kart 256 GB">SD Kart 256 GB</option>
                             <option value="SD Kart 512 GB">SD Kart 512 GB</option>
                             <option value="3M Kablo">3M Kablo</option>
@@ -277,7 +277,9 @@ $stmt->close();
                             <option value="7M Kablo">7M Kablo</option>
                             <option value="10M Kablo">10M Kablo</option>
                             <option value="Montaj">Montaj</option>
+                            <option value="__custom__">+ Ek Kamera / Diğer (yeni model gir)</option>
                         </select>
+                        <input type="text" id="model_custom" name="model_custom" placeholder="Yeni model adını yazın" style="display:none; margin-top: 8px;">
                     </div>
 
                     <div class="form-group">
@@ -346,6 +348,31 @@ $stmt->close();
             document.getElementById('total_cost').value = total.toFixed(2);
         }
 
+        function toggleCustomModel() {
+            const sel = document.getElementById('model');
+            const custom = document.getElementById('model_custom');
+            if (sel.value === '__custom__') {
+                custom.style.display = 'block';
+                custom.required = true;
+                custom.focus();
+            } else {
+                custom.style.display = 'none';
+                custom.required = false;
+            }
+        }
+
+        function ensureModelOption(value) {
+            const sel = document.getElementById('model');
+            if (!value) return;
+            const exists = Array.from(sel.options).some(o => o.value === value);
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = value;
+                sel.insertBefore(opt, sel.options[sel.options.length - 1]);
+            }
+        }
+
         function openModal(mode = 'create') {
             const modal = document.getElementById('productModal');
             const title = document.getElementById('modalTitle');
@@ -355,6 +382,8 @@ $stmt->close();
                 title.textContent = 'Yeni Ürün Ekle';
                 form.reset();
                 document.getElementById('product_id').value = '';
+                document.getElementById('model_custom').style.display = 'none';
+                document.getElementById('model_custom').required = false;
                 calculateTotal();
             } else {
                 title.textContent = 'Ürün Düzenle';
@@ -383,7 +412,11 @@ $stmt->close();
                 openModal('edit');
 
                 document.getElementById('product_id').value = data.id;
+                ensureModelOption(data.model || '');
                 document.getElementById('model').value = data.model || '';
+                document.getElementById('model_custom').style.display = 'none';
+                document.getElementById('model_custom').required = false;
+                document.getElementById('model_custom').value = '';
                 document.getElementById('product_name').value = data.product_name || '';
                 document.getElementById('serial_number').value = data.serial_number || '';
                 document.getElementById('imei_number').value = data.imei_number || '';
@@ -421,6 +454,23 @@ $stmt->close();
                 closeModal();
             }
         }
+
+        document.getElementById('productForm').addEventListener('submit', function (e) {
+            const sel = document.getElementById('model');
+            if (sel.value === '__custom__') {
+                const customVal = document.getElementById('model_custom').value.trim();
+                if (!customVal) {
+                    e.preventDefault();
+                    alert('Lütfen yeni model adını girin.');
+                    return;
+                }
+                const opt = document.createElement('option');
+                opt.value = customVal;
+                opt.textContent = customVal;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
+        });
     </script>
 </body>
 </html>

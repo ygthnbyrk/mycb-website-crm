@@ -54,6 +54,15 @@ if (!empty($items)) {
         $stmt_item->execute();
         $stmt_item->close();
 
+        // Kayıtlı ürün seçildiyse stok durumunu "Satıldı" yap (satış akışı dışındaki hızlı
+        // Stokta<->Pasif geçişi toggle-product-status.php'de zaten bu duruma dokunmuyor).
+        if ($product_id) {
+            $stmt_status = $conn->prepare("UPDATE products SET status = 'Satıldı' WHERE id = ?");
+            $stmt_status->bind_param('i', $product_id);
+            $stmt_status->execute();
+            $stmt_status->close();
+        }
+
         // Abonelik oluştur - mevcut Abonelikler yapısıyla aynı mantık (24 ay / item_type=product)
         $item_detail = $category ?? '';
         $stmt_sub = $conn->prepare("INSERT INTO subscriptions (sale_id, customer_id, product_id, item_type, item_name, item_detail, initial_sale_date, renewal_date) VALUES (?, ?, ?, 'product', ?, ?, ?, ?)");
